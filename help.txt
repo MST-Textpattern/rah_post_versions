@@ -1,9 +1,9 @@
 h1. rah_post_versions
 
-p. Store and revive old versions of articles, categories, sections, forms and pages. Rah_post_versions embeds revision control to "Textpattern's":http://www.textpattern.com admin interface. The plugin monitors changes made thru the web-based admin interface and stores the versions to repository.
+p. Store and revive old versions of articles, categories, sections, forms and pages. Rah_post_versions embeds revision control to "Textpattern's":http://www.textpattern.com admin-side user interface. The plugin monitors changes made from the web-based admin interface and stores the reversions in a repository.
 
-* Version: 0.9
-* Updated: 2011/06/18 7:00 AM UTC
+* Version: 1.0
+* Updated: 2011/08/23 11:00 PM UTC
 
 h3. Table of Contents
 
@@ -12,6 +12,8 @@ h3. Table of Contents
 * "Requirements":#requirements
 * "Installation":#installation
 * "Interface":#interface
+* "Preferences":#preferences
+* "For Developers":#for-developers
 * "Limitations":#limitations
 * "Changelog":#changelog
 
@@ -29,14 +31,8 @@ h3(#requirements). Requirements
 
 p. Rah_post_versions' minimum requirements:
 
-* Textpattern 4.0.7+
-
-p. Recommended:
-
-* Textpattern 4.4.1+
-* Optional:
-** jQuery (bundled with TXP)
-** JavaScript supporting client browser
+* Textpattern 4.4.1 or newer.
+* PHP 5.2.0 or newer.
 
 h3(#installation). Installation
 
@@ -60,13 +56,176 @@ p. When you open the Main area you will see the default view; a list of items. T
 
 h4. Preferences panel
 
-p. Preferences panel lets the user change some of the common settings. These include: exclude form fields from tracking, exclude changes made by specific authors, set which pages, or events, to track, send email notification about changes, and set identification code. When you open the Preferences panel, you will see that the _identification code_ is small PHP snippet. It will generate the required identification for a posted change. Without proper ID, a change can not be threaded to correct set of changes.
+p. Preferences panel lets the user change some of the common settings. These include exclude form fields from tracking, exclude changes made by specific authors, set which pages, or events, to track, and set identification code. When you open the Preferences panel, you will see that the _identification code_ is small PHP snippet. It will generate the required identification for a posted change. Without proper ID, a change can not be threaded to correct set of changes.
+
+h3(#preferences). Preferences and configuration
+
+p. Preferences panel lets the user change some of the common settings. Available settings are as follows.
+
+h4(#rah_post_versions_exclude). Ignored field names
+
+p. Fields listed are not stored in the version control system. The preference takes comma-separated list of field names, i.e. name attribute from HTML textareas inputs, buttons, and select fields.
+
+h4(#rah_post_versions_authors). Ignored authors
+
+p. Changes done by authors listed are not stored in the version control system. They field takes comma-separated list of login names. By default no authors are ignored.
+
+h4(#rah_post_versions_events). Watched admin-side events
+
+p. The preference chooses which admin-side page's are watched for changes. The field includes long list of admin-side event and step pairs. When one of the events is accessed, the data sent by the client is stored as a revision in the version control system.
+
+h4(#rah_post_versions_hidden). Hidden fields
+
+p. Fields listed in the hidden fields are stored, but hidden. When viewing an individual revision the field's content are not directly visible. Default value is @event,step,save@.
+
+h4(#rah_post_versions_ident). Commit identification code
+
+p. Identification code decides how revisions should be detected and what the modified items are. Identification makes whole identification progress possible, without it, it would be impossible to know what a revision is and what item the change affects.
+
+h3(#for-developers). For Developers
+
+p. As of version 1.0, rah_post_versions has provided tools for developers. These tools, an API and added hooking points, allow developers to extend plugin's functionality, and for instance, create revisions directly from their code, as easily as calling single class method.
+
+h4. API
+
+p. The API allows picking up changes (commits), and creating new revisions directly from plugins, and other PHP code snippets. The API can be used to make rah_post_versions to keep track of the changes done via plugin's editor interface.
+
+p(#rah_post_versions-create_revision). Creating a new revision is as easy as calling a single class method, *rah_post_versions::create_revision(array $data)*. The @create_revision()@ has a single attribute, @$data@. The @$data@ should be an array, containing all the revision data. The @$data@ array's keys (items) are as follows:
+
+bc. array(
+	'grid' => $grid,
+	'title' => $title,
+	'author' => $user,
+	'event' => $event,
+	'step' => $step,
+	'data' => array()
+);
+
+p. *grid* (string, 1-255 bytes, required)
+Is a unique ID which is used together with @event@ to detect which item the revision belongs to. The @grid@'s value can be any string between 1-255 bytes, as long as it helps to detect the item correctly. Otherwise the revision doesn't know which item it belongs to.
+
+p. *title* (string, 1-255 bytes, required)
+Item's title/name. It's the thing that is shown as the item's name in the repository browser.
+
+p. *author* (string, 1-64 bytes, required)
+Revision's author. The @author@ will need to be a valid username. Uses login names.T here is no limitation to set which user group the user has belong to, but it will have to be a real user.
+
+p. *event* (string, 1-255 bytes, required)
+Admin-side event the revision comes from or belongs to. Usually the @event@ would be a admin-side panel's name/event, but it can really be anything. If the commit comes from an admin-side pane (admin-side plugin etc), use the pane's event, if elsewhere, use what sounds most appropriate, unique, and most recognizable.
+
+p. *step* (string, 1-255 bytes, required)
+Admin-side step the revision comes from, or action committed (delete, save, create etc). Same rules apply as to the @event@ above.
+
+p. *data* (array, up to 4 GB, required)
+The @data@ is the actual committed revision data. The @data@ take's an array map, containing @FieldName => FieldData@ property pairs.
+
+p. @rah_post_versions::create_revision()@ returns @FALSE@ on error, and @TRUE@ on success or when new revision isn't needed. New revision isn't needed if committed data matches last revision.
+
+p. *Basic usage*
+
+bc.. $repository = new rah_post_versions();
+
+/* Some data for the revision */
+
+$data = array(
+	'content' => 'Hello World!',
+	'active' => 1,
+	'sky' => 'Blue',
+	'parent_item' => 'Universe',
+);
+
+/* Create the revision */
+
+$repository->create_revision(
+	array(
+		'grid' => 'my_item_specific_id',
+		'title' => 'Item Name',
+		'author' => 'loginname',
+		'event' => 'xxx_myplugin_event',
+		'step' => 'save',
+		'data' => $data
+	)
+);
+
+p. *More advanced use of rah_post_versions::create_revision().* In the example we check if @rah_post_versions@ class exists to be sure that the plugin is installed, and use global admin-side variables to populate some of the admin-side information. Revision data is picked directly from @$_POST@ data.
+
+bc.. /**
+ * We wrap everything into function
+ * @return bool FALSE on error, TRUE on success or when class isn't available
+*/
+
+function xxx_commit_to_repo() {
+	global $txp_user, $event, $step;
+
+	/* If class doesn't exists, end here */
+
+	if(!class_exists('rah_post_versions'))
+		return true;
+
+	$repository = new rah_post_versions();
+
+	/* Create the revision, return boolean */
+
+	return $repository->create_revision(
+		array(
+			'grid' => gps('name'),
+			'title' => gps('name'),
+			'author' => $txp_user,
+			'event' => $event,
+			'step' => $step,
+			'data' => $_POST
+		)
+	);
+}
+
+echo xxx_commit_to_repo(); /* Returns FALSE on error */
+
+h4. Hooking and callbacks
+
+p. Other way of extending plugin's functionality and possibilities are the hooks. The callback functionality uses Textpattern 4.x's regular way of handling callbacks, the same stuff used in "Pluggable UI and other callback registering":http://textpattern.net/wiki/index.php?title=Plugin_Development_Guidelines#Callbacks. Rah_post_version's callbacks are as follows.
+
+p. *event: rah_post_versions_tasks, step: revision_created*
+Is called when a new revision is successfully created. Revision data is passed to the hooked function. The revision data is the same array map as passed to the "rah_post_version::create_revision":#rah_post_versions-create_revision method.
+
+p. *event: rah_post_versions_tasks, step: item_deleted* is called when delete action is done for a item.
+
+p. *event: rah_post_versions_tasks, step: revision_deleted* is called when delete action is done for a revision.
+
+p. *event: rah_post_versions_tasks, step: messager_called* is called when messager is run. Messagaer is run after a item has potentially been reverted to older revision (note: messager doesn't know if reverting was successful or if it was actually even done. It only knows that "hey someone called me").
 
 h3(#limitations). Limitations
 
-p. There are some limitations, because the way the plugin works is what it is. Most obvious is that it will only track the form submits. If some interface doesn't use form submits, or works outside your browser (desktop client or similar), it won't track it. Neither the plugin is informed about deletations, and renaming forms, or pages, will start an new set of changes under a new name.
+p. There are some limitations, because the way the plugin works is what it is. Most obvious is that it will only track the form submits. If some interface doesn't use form submits, or works outside your browser (desktop client or similar), it won't track it. Neither the plugin is informed about delete, and renaming forms, or pages will start a new set of changes under a new item.
 
 h3(#changelog). Changelog
+
+p. *Version 1.0*
+
+* Fixed: Trims item name from unneeded whitespace before saving the revision. Fixes issue where a nameless item could potentially be added to the revision browser.
+* Fixed: Do not escape a field name before checking it against list of hidden, but after. Fixes issue where field names with special characters couldn't be hidden.
+* Fixed: issue where admin-side @step@ was used directly in links' target. In some cases some links could become invalid, or cause extra unneeded processing while still working.
+* Fixed: Messager shouldn't listen HTTP GETs, just POSTs. Neither it should take the admin-side pane link from user's sent data.
+* Added: API and hooking points for developers. Extra functionality can be added by hooking to callback events, and developers can create revisions directly from their code (plugins etc) with a single class method.
+* Added: Optional support for storing revision data in static files, leaving only less storage space requiring meta data to the database table. The feature should considered advanced, and due to that isn't directly configurable via GUI as it requires understanding of security, filesystem permissions and MySQL, and has the risk of data losses. Activating the feature requires setting an path in Textpattern's config.php file, and creating a writable directory in a secure location, outside publicly accessible web root.
+* Added: CSRF protection.
+* Added: Doesn't save a revision if nothing changed from the latest revision.
+* Added: Admin-side interface uses language strings. The interface is translatable using Textpattern's Textpacks.
+* Added: Remembers lists' sorting and filtering options across sessions.
+* Added: Renaming an item is reflected in the main item listing, instead of the item keeping the original name.
+* Added: Lists can now be arranged by clicking column headings.
+* Added: Group permission integration. For instance, now only Publishers can remove items, and only appropriate interface elements are shown to users with different permissions.
+* Added: Direct link to diff tool on individual item's page. Makes it easier to compare changes to the older revision.
+* Changed: Default configuration for first installs. Added @rah_external_output:save@ and @rah_autogrowing_textarea:save@ to watched events.
+* Changed: Integrated plugin's preferences to Textpattern's native admin-side preferences panel. As such, editing preferences is restricted by group permissions.
+* Changed: Diff tool now takes newest and oldest revision from the selection, instead of the first two.
+* Changed: Doesn't carry sorting options in URLs.
+* Improved: Styling, JavaScript and HTML markup structure in general.
+* Improved: Reduced continues @htmlspecialchars()@ calls caused by the diff algorithm.
+* Improved: Database query efficiency. New installs get some new indexes too.
+* Removed: Emailing feature. Relatively pointless, and didn't do anything.
+* Removed: Filtering bar. All the options are integrated to elsewhere, to appropriate locations. As such, separate clunky filtering bar isn't needed.
+* Re-written in PHP5-level OOP. Takes advantage of chaining and so on.
+* Now requires Textpattern version 4.4.1 or newer, and PHP version 5 or newer.
 
 p. *Version 0.9*
 
