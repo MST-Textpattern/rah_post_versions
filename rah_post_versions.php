@@ -1,15 +1,17 @@
-<?php	##################
-	#
-	#	rah_post_versions-plugin for Textpattern
-	#	version 1.0
-	#	by Jukka Svahn
-	#	http://rahforum.biz
-	#
-	#	Copyright (c) 2011 Jukka Svahn
-	#	Licensed under GNU Genral Public License version 2
-	#	http://www.gnu.org/licenses/gpl-2.0.html
-	#
-	###################
+<?php
+
+/**
+ * Rah_post_versions plugin for Textpattern CMS
+ *
+ * @author Jukka Svahn
+ * @date 2010-
+ * @license GNU GPLv2
+ * @link http://rahforum.biz/plugins/rah_post_versions
+ *
+ * Copyright (C) 2012 Jukka Svahn <http://rahforum.biz>
+ * Licensed under GNU Genral Public License version 2
+ * http://www.gnu.org/licenses/gpl-2.0.html
+ */
 
 	if(@txpinterface == 'admin') {
 		rah_post_versions_install();
