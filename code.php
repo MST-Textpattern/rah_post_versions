@@ -1,7 +1,7 @@
 <?php	##################
 	#
 	#	rah_post_versions-plugin for Textpattern
-	#	version 0.1
+	#	version 0.2
 	#	by Jukka Svahn
 	#	http://rahforum.biz
 	#
@@ -130,7 +130,7 @@
 				'email' => 'No',
 				'email_additional' => '',
 				'posting_now' => 'No',
-				'events' => 'article:edit, article:create, article:publish, article:save',
+				'events' => 'article:edit, article:create, article:publish, article:save, page:page_create, page:page_edit, page:page_save, form:form_create, form:form_edit, form:form_save, prefs:prefs_save, prefs:advanced_prefs_save, category:cat_article_create, category:cat_image_create, category:cat_file_create, category:cat_link_create, category:cat_article_save, category:cat_image_save, category:cat_file_save, category:cat_link_save, section:section_create, section:section_save, link:link_post, link:link_save, discuss:discuss_save, image:image_save, file:file_save, css:css_save',
 				'hidden' => 'event,step,save',
 				'ident' => 
 					'switch($event) {'.n.
