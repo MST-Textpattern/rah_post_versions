@@ -41,7 +41,7 @@
 			
 			safe_delete(
 				'txp_prefs',
-				"name like 'rah_post_versions_%'"
+				"name like 'rah\_post\_versions\_%'"
 			);
 			
 			@safe_query(
