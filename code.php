@@ -1,9 +1,13 @@
 <?php	##################
 	#
 	#	rah_post_versions-plugin for Textpattern
-	#	version 0.4
+	#	version 0.5
 	#	by Jukka Svahn
 	#	http://rahforum.biz
+	#
+	#	Copyright (C) 2010 Jukka Svahn
+	#	Licensed under GNU Genral Public License version 2
+	#	http://www.gnu.org/licenses/gpl-2.0.html
 	#
 	###################
 
@@ -1411,9 +1415,6 @@ EOF;
 		if(empty($title) or empty($grid))
 			return;
 		
-		if(!$grid)
-			return;
-		
 		/*
 			Excludes fields
 		*/
@@ -1432,8 +1433,6 @@ EOF;
 			return;
 		
 		$data = doSlash(base64_encode(serialize($out)));
-		
-		
 		
 		if(
 			safe_count(
