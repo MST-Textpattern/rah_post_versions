@@ -1,0 +1,75 @@
+h1. rah_post_versions
+
+p. Store and revive old versions of articles, categories, sections, forms and pages. Rah_post_versions embeds revision control to "Textpattern's":http://www.textpattern.com admin interface. The plugin monitors changes made thru the web-based admin interface and stores the versions to repository.
+
+* Version: 0.1
+* Updated: 2010/06/07 11:30 AM UTC
+
+h3. Table of Contents
+
+* "List of features":#list-of-features
+* "Basic concept":#basic-consept
+* "Requirements":#requirements
+* "Installation":#installation
+* "Interface":#interface
+* "Limitations":#limitations
+* "Changelog":#changelog
+
+h3(#list-of-features). List of features
+
+* Tracks changes made via Textpattern's interface.
+* By default the plugin tracks edits and saves of articles, pages, forms, preferences, categories, sections, styles, discussion and links. The plugin's tracking can be extended to other areas from the plugin's preferences.
+* Ability to revert edits to a previous revision.
+
+h3(#basic-concept). Basic concept
+
+p. The rah_post_versions tracks the changes made via Textpattern's interface. Instead it tracking the database, it tracks the data sent by your browser and received by the server. After it has collected the appropriate data and filtered it to be valid, it starts indentifying process. After it has the exact info what the change is and where it should go, it stores the information to the revision control, threaded under appropriate item. 
+
+h3(#requirements). Requirements
+
+p. Rah_post_versions' minimum requirements:
+
+* PHP 4.3+
+* Textpattern 4.0.7+
+
+p. Recommended:
+
+* PHP 5.1.2+
+* Textpattern 4.2.0+
+* Optional:
+** jQuery (bundled with TXP)
+** JavaScript supporting client browser
+
+h3(#installation). Installation
+
+p. The general behavior stands:
+
+# Go to your Textpattern installation's admin panel.
+# Navigate to _Admin / Plugins_.
+# Download and open the plugin code.
+# Copy the plugin code to the install plugin box.
+# Click install and go thru the automated installation process.
+# After installation find the plugin from the plugin list and click Activate.
+# Now the plugin is installed and ready to be used. The plugin's interface can be now found from _Extensions/Post Versions_.
+
+h3(#interface). Interface
+
+p. After a sucesful installation you can find rah_post_versions' interface under _Extensions/Post Versions_. The interface is divided to two main areas; _Subversion repository browser_, that is the _main_ tab, and _Prefences_.
+
+h4. The Main area, repository browser
+
+p. When you open the Main area you will see the default view; a list of items. The list consists the items that have been modified or saved, and revisioned. When you click one of these items, the item's changeset will expand, and you will see the list of individual changes made to that specific item. The changes can be viewed too.
+
+h4. Preferences panel
+
+p. Preferences panel lets the user change some of the common settings. These include: exclude form fields from tracking, exclude changes made by specific authors, set which pages, or events, to track, send email notification about changes, and set ident code. When you open the Preferences panel, you will see that the _ident code_ is small piece of PHP snippet. It will generate the required identification for a posted change. Without proper ID, a change can not be threaded to corret set of changes.
+
+h3(#limitations). Limitations
+
+p. There are some limitations, because the way the plugin works is what it is. Most obvious is that it will only track the form submits. If some interface doesn't use form submits, or works outside your browser (desktop client or similiar), it won't track it. Neither the plugin is informed about deletations, and renaming forms, or pages, will start an new set of changes under a new name.
+
+h3(#changelog). Changelog
+
+p. *Version 0.1*
+
+* Initial release.
