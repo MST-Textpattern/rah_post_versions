@@ -1,7 +1,7 @@
 <?php	##################
 	#
 	#	rah_post_versions-plugin for Textpattern
-	#	version 0.5
+	#	version 0.6
 	#	by Jukka Svahn
 	#	http://rahforum.biz
 	#
@@ -1049,6 +1049,27 @@ EOF;
 	}
 
 /**
+	Shows input fields
+*/
+
+	function rah_post_versions_field($value='',$key='',$i=1,$hidden=false) {
+		if($hidden == true) 
+			return 
+				'						<input type="hidden" name="'.htmlspecialchars($key).'" value="'.htmlspecialchars($value).'" />';
+		
+		return
+			'				<p>'.n.
+			'					<label for="rah_post_versions_label_'.$i.'">'.htmlspecialchars($key).'</label><br />'.n.
+			((substr_count($value,n) == 0) ?
+				'						<input id="rah_post_versions_label_'.$i.'" type="text" name="'.htmlspecialchars($key).'" class="edit" value="'.htmlspecialchars($value).'" />'
+			:
+				'						<textarea id="rah_post_versions_label_'.$i.'" name="'.htmlspecialchars($key).'" class="code" cols="100" rows="6">'.htmlspecialchars($value).'</textarea>'
+			).n.
+			'				</p>'.n
+		;
+	}
+
+/**
 	Views individual changeset
 */
 
@@ -1088,42 +1109,32 @@ EOF;
 			$out[] = 
 				'		<form method="post" action="index.php" onsubmit="return verify(\'Are you sure? There is no going back.\')">'.n.
 				'			<p id="rah_post_versions_actions">&#171; <a href="'.$back.'">Go back</a> <strong>Ident:</strong> '.$rs['title'].' <strong>Saved:</strong> '.$rs['posted'].' by '.$rs['author'].'. <strong>Event</strong> <a href="?event='.$rs['event'].'">'.$rs['event'].'</a>, '.$rs['step'].'</p>'.n;
-				
-			
-		
-			
 			
 			$i = 0;
 			
 			foreach($data as $key => $value) {
+
+				$i++;
 				
-				
-				if(in_array($key,$hidden)) {
-					$out[] = 
-						'						<input type="hidden" name="'.$key.'" value="'.htmlspecialchars($value).'" />';
+				if(is_array($value)) {
+					foreach($value as $needle => $selection) 
+						$out[] = 
+							rah_post_versions_field(
+								$selection,
+								$key.'['.$needle.']',
+								$i,
+								in_array($key,$hidden)
+							);
 					continue;
 				}
 				
-				
-				$i++;
-				
-				$lines = substr_count($value,n);
-				
 				$out[] = 
-					
-					'				<p>'.n.
-					'					<label for="rah_post_versions_label_'.$i.'">'.htmlspecialchars($key).'</label><br />'.n;
-				
-				
-				if($lines == 0)
-					$out[] = 
-						'						<input id="rah_post_versions_label_'.$i.'" type="text" name="'.$key.'" class="edit" value="'.htmlspecialchars($value).'" />';
-				else
-					$out[] = 
-						'						<textarea id="rah_post_versions_label_'.$i.'" name="'.$key.'" class="code" cols="100" rows="6">'.htmlspecialchars($value).'</textarea>';
-				
-				$out[] =
-					'				</p>'.n;
+					rah_post_versions_field(
+						$value,
+						$key,
+						$i,
+						in_array($key,$hidden)
+					);
 				
 			}
 
@@ -1422,6 +1433,13 @@ EOF;
 		$exclude = explode(',',$exclude);
 		
 		foreach($post as $key => $value) {
+			
+			if(in_array($key,array(
+				'rah_article_versions_repost_is',
+				'rah_article_versions_repost_uri',
+				'rah_article_versions_repost_id'
+			)))
+				continue;
 			
 			if(in_array($key,$exclude))
 				continue;
