@@ -2,8 +2,8 @@ h1. rah_post_versions
 
 p. Store and revive old versions of articles, categories, sections, forms and pages. Rah_post_versions embeds revision control to "Textpattern's":http://www.textpattern.com admin interface. The plugin monitors changes made thru the web-based admin interface and stores the versions to repository.
 
-* Version: 0.2
-* Updated: 2010/06/07 7:20 PM UTC
+* Version: 0.3
+* Updated: 2010/06/09 2:00 AM UTC
 
 h3. Table of Contents
 
@@ -70,9 +70,13 @@ p. There are some limitations, because the way the plugin works is what it is. M
 
 h3(#changelog). Changelog
 
+p. *Version 0.3*
+
+* Fixed: no longer unsets ID and Title from the forms. These were leftovers from the development period. "Thank you for repoting, Jan":http://forum.textpattern.com/viewtopic.php?pid=229943#p229943.
+
 p. *Version 0.2*
 
-* Updated original installer to add more monitored pages. Current users can add to the field following code: @article:edit, article:create, article:publish, article:save, page:page_create, page:page_edit, page:page_save, form:form_create, form:form_edit, form:form_save, prefs:prefs_save, prefs:advanced_prefs_save, category:cat_article_create, category:cat_image_create, category:cat_file_create, category:cat_link_create, category:cat_article_save, category:cat_image_save, category:cat_file_save, category:cat_link_save, section:section_create, section:section_save, link:link_post, link:link_save, discuss:discuss_save, image:image_save, file:file_save, css:css_save@
+* Updated original installer to add more monitored pages. "Thank you for reposting, Dale":http://forum.textpattern.com/viewtopic.php?pid=229852#p229852. Current users can add to the field following code: @article:edit, article:create, article:publish, article:save, page:page_create, page:page_edit, page:page_save, form:form_create, form:form_edit, form:form_save, prefs:prefs_save, prefs:advanced_prefs_save, category:cat_article_create, category:cat_image_create, category:cat_file_create, category:cat_link_create, category:cat_article_save, category:cat_image_save, category:cat_file_save, category:cat_link_save, section:section_create, section:section_save, link:link_post, link:link_save, discuss:discuss_save, image:image_save, file:file_save, css:css_save@
 
 p. *Version 0.1*
 

@@ -1,7 +1,7 @@
 <?php	##################
 	#
 	#	rah_post_versions-plugin for Textpattern
-	#	version 0.2
+	#	version 0.3
 	#	by Jukka Svahn
 	#	http://rahforum.biz
 	#
@@ -843,11 +843,6 @@ EOF;
 			
 			
 			$i = 0;
-			
-			unset(
-				$data['ID'],
-				$data['Title']
-			);
 			
 			foreach($data as $key => $value) {
 				
