@@ -1,7 +1,7 @@
 <?php	##################
 	#
 	#	rah_post_versions-plugin for Textpattern
-	#	version 0.6
+	#	version 0.7
 	#	by Jukka Svahn
 	#	http://rahforum.biz
 	#
@@ -919,6 +919,15 @@ EOF;
 				continue;
 			}
 			
+			/*
+				Check if array. If true make the array a single block
+			*/
+			
+			if(is_array($old[$key]))
+				$old[$key] = implode(n,$old[$key]);
+			if(is_array($val))
+				$val = implode(n,$val);
+			
 			$out[] = 
 				'<p><strong>'.htmlspecialchars($key).':</strong></p>'.n.
 				'<div class="rah_post_versions_diff">'.
@@ -961,7 +970,7 @@ EOF;
 			) as $key => $line
 		){
 			if(is_array($line)) {
-				if(!empty($line['d']))
+				if(!empty($line['d'])) 
 					$out[] = '<span class="rah_post_versions_del">'.htmlspecialchars(implode(n,$line['d'])).'</span>';
 				if(!empty($line['i']))
 					$out[] = '<span class="rah_post_versions_add">'.htmlspecialchars(implode(n,$line['i'])).'</span>';
