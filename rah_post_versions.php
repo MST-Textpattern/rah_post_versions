@@ -35,6 +35,8 @@
 
 	function rah_post_versions_install($event='',$step='') {
 		
+		global $prefs;
+		
 		if($step == 'deleted') {
 			
 			safe_delete(
@@ -50,70 +52,6 @@
 			
 			return;
 		}
-		
-		global $textarray, $prefs;
-		
-		/*
-			Make sure language strings are set
-		*/
-		
-		foreach(
-			array(
-				'rah_post_versions' => 'Post Versions',
-				'rah_postver' => 'Post Versions',
-				'main' => 'Main',
-				'preferences' => 'Preferences',
-				'id' => 'ID',
-				'event' => 'Event',
-				'title' => 'Title',
-				'modified' => 'Modified',
-				'changes' => 'Changes',
-				'posted' => 'Posted',
-				'step' => 'Step',
-				'author' => 'Author',
-				'date_format' => '%b %d, %Y %H:%M:%S',
-				'no_changes' => 'No changes to show.',
-				'with_selected' => 'With selected...',
-				'delete' => 'Delete',
-				'diff' => 'Diff',
-				'removed' => 'Selected items removed.',
-				'error_removing' => 'Database error occured when removing items. Please try again.',
-				'select_something' => 'Nothing selected.',
-				'unknown_selection' => 'Unknown selection.',
-				'select_two_items' => 'Invalid selection. Select two items to compare.',
-				'revisions_match' => 'Revisions are exact match. No differences to show.',
-				'exclude' => 'Ignored fields (comma-separated list of field names)',
-				'authors' => 'Ignored authors (comma-separated list of login names)',
-				'events' => 'Watched admin-side events (comma-separated list of event:step pairs)',
-				'hidden' => 'Hidden fields (comma-separated list of field names)',
-				'go_back' => 'Go back',
-				'repost_this' => 'Re-post this',
-				'ident' => 'Commit identification code',
-				'revision_item_name' => '<strong>Item name:</strong> {name}',
-				'revision_committed_by' => '<strong>Saved:</strong> {posted} <strong>by</strong> {author}',
-				'revision_from_panel' => '<strong>Event:</strong> {event}, {step}.',
-				'repost_notice' => '<strong>Notice:</strong> Only click the <em>Re-post this</em> button when you are certain what you are about to do. Clicking the button will redo the exact posting, and depending of the information state stored, it might either overwrite, partially replace or dublicate something.',
-				'reposted_form_id' => 'Re-posted {id}. {go_back}.',
-				'go_back_to_listing' => 'Go back to the version listing',
-				'go_to_first_page' => 'Jump to the first page',
-				'go_to_last_page' => 'Jump to the last page',
-				'compare_to_previous' => 'Compare to {prev_id}',
-				'view_other_revisions' => 'Changes from {previous} to {current}',
-				'set_view_limit' => 'View: ',
-				'view_n_per_page' => 'View {items} items per page',
-				'missing_revision_data' => 'Missing revision\'s data.',
-				'repository_data_missing' => 'Repository data is missing or corrupted. Check that the directory storing revision data still exists and is writeable. Writing to repository is disabled and reading is on restricted mode untill the problem is solved.',
-			) as $string => $translation
-		) {
-			$name = strpos($string, 'rah_') === 0 ? $string : 'rah_post_versions_'.$string;
-			
-			if(!isset($textarray[$name]))
-				$textarray[$name] = $translation;
-		}
-		
-		/*
-			Add privs
-		*/
 		
 		foreach(
 			array(
