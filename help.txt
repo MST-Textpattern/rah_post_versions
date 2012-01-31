@@ -2,13 +2,13 @@ h1. rah_post_versions
 
 p. Store and revive old versions of articles, categories, sections, forms and pages. Rah_post_versions embeds revision control to "Textpattern's":http://www.textpattern.com admin interface. The plugin monitors changes made thru the web-based admin interface and stores the versions to repository.
 
-* Version: 0.7
-* Updated: 2010/06/21 2:20 PM UTC
+* Version: 0.8
+* Updated: 2010/10/19 7:40 AM UTC
 
 h3. Table of Contents
 
 * "List of features":#list-of-features
-* "Basic concept":#basic-consept
+* "Basic concept":#basic-concept
 * "Requirements":#requirements
 * "Installation":#installation
 * "Interface":#interface
@@ -23,7 +23,7 @@ h3(#list-of-features). List of features
 
 h3(#basic-concept). Basic concept
 
-p. The rah_post_versions tracks the changes made via Textpattern's interface. Instead it tracking the database, it tracks the data sent by your browser and received by the server. After it has collected the appropriate data and filtered it to be valid, it starts indentifying process. After it has the exact info what the change is and where it should go, it stores the information to the revision control, threaded under appropriate item. 
+p. The rah_post_versions tracks the changes made via Textpattern's interface. Instead it tracking the database, it tracks the data sent by your browser and received by the server. After it has collected the appropriate data and filtered it to be valid, it starts identifying process. After it has the exact info what the change is and where it should go, it stores the information to the revision control, threaded under appropriate item. 
 
 h3(#requirements). Requirements
 
@@ -54,7 +54,7 @@ p. The general behavior stands:
 
 h3(#interface). Interface
 
-p. After a sucesful installation you can find rah_post_versions' interface under _Extensions/Post Versions_. The interface is divided to two main areas; _Subversion repository browser_, that is the _main_ tab, and _Prefences_.
+p. After a successful installation you can find rah_post_versions' interface under _Extensions/Post Versions_. The interface is divided to two main areas; _Subversion repository browser_, that is the _main_ tab, and _Preferences_.
 
 h4. The Main area, repository browser
 
@@ -62,17 +62,23 @@ p. When you open the Main area you will see the default view; a list of items. T
 
 h4. Preferences panel
 
-p. Preferences panel lets the user change some of the common settings. These include: exclude form fields from tracking, exclude changes made by specific authors, set which pages, or events, to track, send email notification about changes, and set ident code. When you open the Preferences panel, you will see that the _ident code_ is small piece of PHP snippet. It will generate the required identification for a posted change. Without proper ID, a change can not be threaded to corret set of changes.
+p. Preferences panel lets the user change some of the common settings. These include: exclude form fields from tracking, exclude changes made by specific authors, set which pages, or events, to track, send email notification about changes, and set identification code. When you open the Preferences panel, you will see that the _identification code_ is small PHP snippet. It will generate the required identification for a posted change. Without proper ID, a change can not be threaded to correct set of changes.
 
 h3(#limitations). Limitations
 
-p. There are some limitations, because the way the plugin works is what it is. Most obvious is that it will only track the form submits. If some interface doesn't use form submits, or works outside your browser (desktop client or similiar), it won't track it. Neither the plugin is informed about deletations, and renaming forms, or pages, will start an new set of changes under a new name.
+p. There are some limitations, because the way the plugin works is what it is. Most obvious is that it will only track the form submits. If some interface doesn't use form submits, or works outside your browser (desktop client or similar), it won't track it. Neither the plugin is informed about deletations, and renaming forms, or pages, will start an new set of changes under a new name.
 
 h3(#changelog). Changelog
 
+p. *Version 0.8*
+
+* Added tool-tips to the pagination's jump links (_Go to the first page_ and _Go to the last page_).
+* Removed username from showing up in the mails.
+* Unified conditional statements; now all use @||@ and @&&@ operators instead of synonym mashmixmess.
+
 p. *Version 0.7*
 
-* Fix/change: Diff tool shows/compares array data as blocks. Array's are imploded and values are seperated with line breaks.
+* Fix/change: Diff tool shows/compares array data as blocks. Array's are imploded and values are separated with line breaks.
 
 p. *Version 0.6*
 
@@ -90,11 +96,11 @@ p. *Version 0.4*
 
 p. *Version 0.3*
 
-* Fixed: no longer unsets ID and Title from the forms. These were leftovers from the development period. "Thank you for repoting, Jan":http://forum.textpattern.com/viewtopic.php?pid=229943#p229943.
+* Fixed: no longer unsets ID and Title from the forms. These were leftovers from the development period. "Thank you for reporting, Jan":http://forum.textpattern.com/viewtopic.php?pid=229943#p229943.
 
 p. *Version 0.2*
 
-* Updated original installer to add more monitored pages. "Thank you for reposting, Dale":http://forum.textpattern.com/viewtopic.php?pid=229852#p229852. Current users can add to the field following code: @article:edit, article:create, article:publish, article:save, page:page_create, page:page_edit, page:page_save, form:form_create, form:form_edit, form:form_save, prefs:prefs_save, prefs:advanced_prefs_save, category:cat_article_create, category:cat_image_create, category:cat_file_create, category:cat_link_create, category:cat_article_save, category:cat_image_save, category:cat_file_save, category:cat_link_save, section:section_create, section:section_save, link:link_post, link:link_save, discuss:discuss_save, image:image_save, file:file_save, css:css_save@
+* Updated original installer to add more monitored pages. "Thank you for re-posting, Dale":http://forum.textpattern.com/viewtopic.php?pid=229852#p229852. Current users can add to the field following code: @article:edit, article:create, article:publish, article:save, page:page_create, page:page_edit, page:page_save, form:form_create, form:form_edit, form:form_save, prefs:prefs_save, prefs:advanced_prefs_save, category:cat_article_create, category:cat_image_create, category:cat_file_create, category:cat_link_create, category:cat_article_save, category:cat_image_save, category:cat_file_save, category:cat_link_save, section:section_create, section:section_save, link:link_post, link:link_save, discuss:discuss_save, image:image_save, file:file_save, css:css_save@
 
 p. *Version 0.1*
 

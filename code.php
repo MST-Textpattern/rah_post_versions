@@ -1,7 +1,7 @@
 <?php	##################
 	#
 	#	rah_post_versions-plugin for Textpattern
-	#	version 0.7
+	#	version 0.8
 	#	by Jukka Svahn
 	#	http://rahforum.biz
 	#
@@ -11,7 +11,7 @@
 	#
 	###################
 
-	if (@txpinterface == 'admin') {
+	if(@txpinterface == 'admin') {
 		rah_post_versions_install();
 		add_privs('rah_post_versions','1,2');
 		register_tab('extensions','rah_post_versions','Post versions');
@@ -224,6 +224,7 @@
 					});
 				});
 			</script>
+
 EOF;
 
 		echo <<<EOF
@@ -338,10 +339,12 @@ EOF;
 
 	function rah_post_versions_input($defaults=array(),$segments=array('filter_event','filter_limit','filter_order','filter_page','group_step','group_limit','group_order')) {
 		foreach($segments as $segment)
-			if(gps($segment)) $get[$segment] = '			<input type="hidden" name="'.$segment.'" value="'.htmlspecialchars(gps($segment)).'" />';
+			if(gps($segment))
+				$get[$segment] = '			<input type="hidden" name="'.$segment.'" value="'.htmlspecialchars(gps($segment)).'" />';
 		
 		foreach($defaults as $key => $val)
-			if(!empty($val)) $get[$key] = '			<input type="hidden" name="'.$key.'" value="'.htmlspecialchars($val).'" />';
+			if(!empty($val))
+				$get[$key] = '			<input type="hidden" name="'.$key.'" value="'.htmlspecialchars($val).'" />';
 		
 		return 
 			implode(n,$get);
@@ -375,7 +378,7 @@ EOF;
 		
 		if($start > 1) 
 			$out[] = 
-				'<a href="'.
+				'<a title="Go to the first page" href="'.
 				rah_post_versions_uri(
 					array(
 						'event' => $event,
@@ -402,7 +405,7 @@ EOF;
 		
 		if($end < $pages)
 			$out[] = 
-				'<a href="'.
+				'<a title="Go to the last page" href="'.
 					rah_post_versions_uri(
 						array(
 							'event' => $event,
@@ -442,14 +445,14 @@ EOF;
 		if($filter_event)
 			$q[] = "event='".doSlash($filter_event)."'";
 		
-		if(!$filter_limit || !is_numeric($filter_limit) || trim($filter_limit,'0123456789') != '')
+		if(!$filter_limit || !is_numeric($filter_limit) || trim($filter_limit,'0123456789'))
 			$filter_limit = 20;
 		
-		if(is_numeric($filter_page) && $filter_page > 0 && is_numeric($filter_limit) && $filter_limit > 0)
+		if(is_numeric($filter_page) && $filter_page > 0 && !trim($filter_limit,'0123456789'))
 			$offset = ($filter_page*$filter_limit)-$filter_limit;
 		else 
 			$offset = 0;
-			
+		
 		if(!in_array($filter_order,array(
 			'id',
 			'event',
@@ -651,10 +654,10 @@ EOF;
 		if($group_step)
 			$q[] = "step='".doSlash($group_step)."'";
 		
-		if(!$group_limit || !is_numeric($group_limit) || trim($group_limit,'0123456789') != '')
+		if(!$group_limit || !is_numeric($group_limit) || trim($group_limit,'0123456789'))
 			$group_limit = 20;
 		
-		if(is_numeric($group_page) && $group_page > 0 && is_numeric($group_limit) && $group_limit > 0)
+		if(is_numeric($group_page) && $group_page > 0 && !trim($group_page,'0123456789'))
 			$offset = ($group_page*$group_limit)-$group_limit;
 		else 
 			$offset = 0;
@@ -816,7 +819,6 @@ EOF;
 		
 		$in = implode(',',$in);
 		
-		
 		safe_delete(
 			'rah_post_versions',
 			'id in('.$in.')'
@@ -835,7 +837,7 @@ EOF;
 		
 		$selection = ps('selected');
 		
-		if(!is_array($selection) or count($selection) != 2) {
+		if(!is_array($selection) || count($selection) != 2) {
 			rah_post_versions_group('Invalid selection. Select two items to compare.');
 			return;
 		}
@@ -1117,7 +1119,7 @@ EOF;
 			
 			$out[] = 
 				'		<form method="post" action="index.php" onsubmit="return verify(\'Are you sure? There is no going back.\')">'.n.
-				'			<p id="rah_post_versions_actions">&#171; <a href="'.$back.'">Go back</a> <strong>Ident:</strong> '.$rs['title'].' <strong>Saved:</strong> '.$rs['posted'].' by '.$rs['author'].'. <strong>Event</strong> <a href="?event='.$rs['event'].'">'.$rs['event'].'</a>, '.$rs['step'].'</p>'.n;
+				'			<p id="rah_post_versions_actions">&#171; <a href="'.$back.'">Go back</a> <strong>Ident:</strong> '.$rs['title'].' <strong>Saved:</strong> '.$rs['posted'].' by '.$rs['author'].'. <strong>Event:</strong> <a href="?event='.$rs['event'].'">'.$rs['event'].'</a>, '.$rs['step'].'</p>'.n;
 			
 			$i = 0;
 			
@@ -1235,8 +1237,7 @@ EOF;
 */
 
 	function rah_post_versions_prefs($message='') {
-		
-		
+
 		global $event;
 		
 		extract(
@@ -1255,22 +1256,22 @@ EOF;
 			).n.
 			
 			'			<p>'.n.
-			'				<label>Excluded fields. Comma seperated list if multiple.</label><br />'.n.
+			'				<label>Excluded fields. Comma separated list if multiple.</label><br />'.n.
 			'				<input class="edit" type="text" name="exclude" value="'.htmlspecialchars($exclude).'" />'.n.
 			'			</p>'.n.
 			
 			'			<p>'.n.
-			'				<label>Set fields hidden. Comma seperated list if multiple. These fields are stored, but hid.</label><br />'.n.
+			'				<label>Set fields hidden. Comma separated list if multiple. These fields are stored, but hid.</label><br />'.n.
 			'				<input class="edit" type="text" name="hidden" value="'.htmlspecialchars($hidden).'" />'.n.
 			'			</p>'.n.
 			
 			'			<p>'.n.
-			'				<label>Monitor following pages. Comma seperated list if multiple. The format of item is <code>event:step</code>.</label><br />'.n.
+			'				<label>Monitor following pages. Comma separated list if multiple. The format of item is <code>event:step</code>.</label><br />'.n.
 			'				<textarea name="events" rows="4" cols="30">'.htmlspecialchars($events).'</textarea>'.n.
 			'			</p>'.n.
 			
 			'			<p>'.n.
-			'				<label>Excluded authors. Comma seperated list if multiple. Uses login names.</label><br />'.n.
+			'				<label>Excluded authors. Comma separated list if multiple. Uses login names.</label><br />'.n.
 			'				<input class="edit" type="text" name="authors" value="'.htmlspecialchars($authors).'" />'.n.
 			'			</p>'.n.
 			
@@ -1283,7 +1284,7 @@ EOF;
 			'			</p>'.n.
 			
 			'			<p>'.n.
-			'				<label>Additional email addresses. Sends changes to this address. Comma seperated list if multiple.</label><br />'.n.
+			'				<label>Additional email addresses. Sends changes to this address. Comma separated list if multiple.</label><br />'.n.
 			'				<input class="edit" type="text" name="email_additional" value="'.htmlspecialchars($email_additional).'" />'.n.
 			'			</p>'.n.
 			
@@ -1361,7 +1362,7 @@ EOF;
 	}
 
 /**
-	Trims a $delim seperated list of items.
+	Trims a $delim separated list of items.
 */
 
 	function rah_post_versions_list_trim($array='',$delim=',') {
@@ -1391,7 +1392,7 @@ EOF;
 
 	function rah_post_versions_id($key='ID') {
 		$id = gps($key);
-		if(!$id and isset($GLOBALS['ID']))
+		if(!$id && isset($GLOBALS['ID']))
 			$id = $GLOBALS['ID'];
 		return $id;
 	}
@@ -1408,7 +1409,7 @@ EOF;
 			Check if the step has post
 		*/
 		
-		$post = (isset($_POST) and is_array($_POST)) ? $_POST : '';
+		$post = (isset($_POST) && is_array($_POST)) ? $_POST : '';
 		
 		if(empty($post))
 			return;
@@ -1429,10 +1430,10 @@ EOF;
 			Check if the ident returned the data we want
 		*/
 		
-		if(isset($kill) or !isset($grid) or !isset($title))
+		if(isset($kill) || !isset($grid) || !isset($title))
 			return;
 		
-		if(empty($title) or empty($grid))
+		if(empty($title) || empty($grid))
 			return;
 		
 		/*
@@ -1524,7 +1525,7 @@ EOF;
 			return;
 		
 		$message = 
-			gTxt('greeting').' '.$txp_user.','.n.n.
+			gTxt('greeting').n.n.
 			'View the changes at:'.n.
 			hu.'textpattern/index.php?event=rah_post_versions'
 		;
@@ -1603,7 +1604,6 @@ EOF;
 		foreach ($areas as $group) 
 			foreach ($group as $title => $name) 
 				$out[$name] = $title;
-			
 		
 		return $out;
 	}
@@ -1632,4 +1632,3 @@ EOF;
 		return
 			implode(n,$out);
 	}
-?>
