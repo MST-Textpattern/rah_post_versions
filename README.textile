@@ -55,7 +55,7 @@ h3. Ignored authors
 
 p. Changes done by authors listed are not stored in the version control system. They field takes comma-separated list of login names. By default no authors are ignored.
 
-h4(#rah_post_versions_events). Watched admin-side events
+h3. Watched admin-side events
 
 p. The preference chooses which admin-side page's are watched for changes. The field includes long list of admin-side event and step pairs. When one of the events is accessed, the data sent by the client is stored as a revision in the version control system.
 
