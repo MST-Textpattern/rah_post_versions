@@ -17,6 +17,8 @@
 		rah_post_versions_install();
 		rah_post_versions_push();
 		add_privs('rah_post_versions', '1,2');
+		add_privs('rah_post_versions_delete', '1');
+		add_privs('rah_post_versions_preferences', '1');
 		add_privs('plugin_prefs.rah_post_versions', '1,2');
 		register_tab('extensions','rah_post_versions', gTxt('rah_post_versions'));
 		register_callback('rah_post_versions_page', 'rah_post_versions');
@@ -52,14 +54,6 @@
 			
 			return;
 		}
-		
-		foreach(
-			array(
-				'delete' => '1',
-				'preferences' => '1',
-			) as $perm => $privs
-		)
-			add_privs('rah_post_versions_'.$perm, $privs);
 		
 		$version = '1.0';
 		
