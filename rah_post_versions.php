@@ -16,14 +16,14 @@
 	if(@txpinterface == 'admin') {
 		rah_post_versions_install();
 		rah_post_versions_push();
-		add_privs('rah_post_versions','1,2');
-		add_privs('plugin_prefs.rah_post_versions','1,2');
-		register_tab('extensions','rah_post_versions',gTxt('rah_post_versions'));
-		register_callback('rah_post_versions_page','rah_post_versions');
-		register_callback('rah_post_versions_head','admin_side','head_end');
-		register_callback('rah_post_versions_messager','admin_side','pagetop_end');
-		register_callback('rah_post_versions_install','plugin_lifecycle.rah_post_versions');
-		register_callback('rah_post_versions_options','plugin_prefs.rah_post_versions');
+		add_privs('rah_post_versions', '1,2');
+		add_privs('plugin_prefs.rah_post_versions', '1,2');
+		register_tab('extensions','rah_post_versions', gTxt('rah_post_versions'));
+		register_callback('rah_post_versions_page', 'rah_post_versions');
+		register_callback('rah_post_versions_head', 'admin_side', 'head_end');
+		register_callback('rah_post_versions_messager', 'admin_side', 'pagetop_end');
+		register_callback('rah_post_versions_install', 'plugin_lifecycle.rah_post_versions');
+		register_callback('rah_post_versions_options', 'plugin_prefs.rah_post_versions');
 	}
 
 /**
@@ -33,7 +33,7 @@
  * @return nothing
  */
 
-	function rah_post_versions_install($event='',$step='') {
+	function rah_post_versions_install($event='', $step='') {
 		
 		global $prefs;
 		
@@ -236,11 +236,7 @@
 			$position++;
 		}
 		
-		/*
-			Set version
-		*/
-		
-		set_pref('rah_post_versions_version',$version,'rah_postver',2,'',0);
+		set_pref('rah_post_versions_version', $version, 'rah_postver', 2, '', 0);
 		$prefs['rah_post_versions_version'] = $version;
 	}
 
