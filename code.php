@@ -1,7 +1,7 @@
 <?php	##################
 	#
 	#	rah_post_versions-plugin for Textpattern
-	#	version 0.3
+	#	version 0.4
 	#	by Jukka Svahn
 	#	http://rahforum.biz
 	#
@@ -183,6 +183,7 @@
 		if(in_array($step,array(
 			'rah_post_versions_group',
 			'rah_post_versions_group_delete',
+			'rah_post_versions_diff',
 			'rah_post_versions_view',
 			'rah_post_versions_delete',
 			'rah_post_versions_prefs',
@@ -283,6 +284,28 @@ EOF;
 				#rah_post_versions_pages .rah_post_version_active {
 					color: #000;
 					text-decoration: underline;
+				}
+				#rah_post_versions_container .rah_post_versions_diff {
+					overflow: auto;
+					white-space: pre;
+					font: 1.1em monospace;
+					line-height: 1.2em;
+					background: #f5f5f5;
+					border: 1px solid #ccc;
+					padding: 10px;
+					margin: 0 0 10px 0;
+				}
+				#rah_post_versions_container .rah_post_versions_diff .rah_post_versions_add {
+					background: #a7d726;
+					border: 1px solid #829b3e;
+					display: block;
+					margin-bottom: -1.1em;
+				}
+				#rah_post_versions_container .rah_post_versions_diff .rah_post_versions_del {
+					background: #c54e4e;
+					border: 1px solid #8b3e3e;
+					display: block;
+					margin-bottom: -1.1em;
 				}
 			</style>
 
@@ -486,7 +509,7 @@ EOF;
 			'			</select>'.n.
 			'			<input type="submit" value="Filter" class="smallerbox" />'.n.
 			'		</form>'.n.
-			'		<form method="post" action="index.php">'.n.
+			'		<form method="post" action="index.php" onsubmit="return verify(\'Are you sure?\')">'.n.
 			
 			rah_post_versions_input(
 				array(
@@ -564,7 +587,7 @@ EOF;
 	}
 
 /**
-	Remove individual items from a group
+	Remove whole groups
 */
 
 	function rah_post_versions_group_delete() {
@@ -693,7 +716,7 @@ EOF;
 			'			<input type="submit" value="Filter" class="smallerbox" />'.n.
 			'		</form>'.n.
 			
-			'		<form method="post" action="index.php">'.n.
+			'		<form method="post" action="index.php" onsubmit="return verify(\'Are you sure?\')">'.n.
 			
 			rah_post_versions_input(
 				array(
@@ -753,6 +776,7 @@ EOF;
 			'			<p class="rah_post_versions_step">'.n.
 			'				<select name="step">'.n.
 			'					<option value="">With selected...</option>'.n.
+			'					<option value="rah_post_versions_diff">Diff</option>'.n.
 			'					<option value="rah_post_versions_delete">Delete</option>'.n.
 			'				</select>'.n.
 			'				<input type="submit" class="smallerbox" value="Go" />'.n.
@@ -798,10 +822,233 @@ EOF;
 	}
 
 /**
+	View differences
+*/
+
+	function rah_post_versions_diff($message='') {
+		
+		global $event;
+		
+		$selection = ps('selected');
+		
+		if(!is_array($selection) or count($selection) != 2) {
+			rah_post_versions_group('Invalid selection. Select two items to compare.');
+			return;
+		}
+		
+		sort($selection);
+		
+		$results = rah_post_versions_diff_data($selection[0],$selection[1]);
+		
+		if(empty($results)) {
+			rah_post_versions_group('Selected items not found.');
+			return;
+		}
+		
+		rah_post_versions_header(
+			$results,$message,'Diff of <a href="'.
+				rah_post_versions_uri(
+					array(
+						'event' => $event,
+						'step' => 'rah_post_versions_view',
+						'group_id' => gps('group_id'),
+						'id' => $selection[0]
+					)
+				).'">r'.$selection[0].'</a> and <a href="'.
+				rah_post_versions_uri(
+					array(
+						'event' => $event,
+						'step' => 'rah_post_versions_view',
+						'group_id' => gps('group_id'),
+						'id' => $selection[1]
+					)
+				).'">r'.$selection[1].'</a>'
+		);
+	}
+
+/**
+	Build comparison of two data array()s
+*/
+
+	function rah_post_versions_diff_data($old,$new) {
+		
+		$old = 
+			safe_field(
+				'data',
+				'rah_post_versions',
+				"id='".doSlash($old)."' and setid='".doSlash(gps('group_id'))."'"
+			);
+		
+		$new = 
+			safe_field(
+				'data',
+				'rah_post_versions',
+				"id='".doSlash($new)."' and setid='".doSlash(gps('group_id'))."'"
+			);
+		
+		if(!$new || !$old)
+			return;
+		
+		$new = unserialize(base64_decode($new));
+		$old = unserialize(base64_decode($old));
+		
+		unset(
+			$old['rah_article_versions_repost_is'],
+			$old['rah_article_versions_repost_uri'],
+			$old['rah_article_versions_repost_id'],
+			$new['rah_article_versions_repost_id'],
+			$new['rah_article_versions_repost_is'],
+			$new['rah_article_versions_repost_uri']
+		);
+		
+		foreach($new as $key => $val) {
+			
+			if(!isset($old[$key]))
+				$old[$key] = '';
+			
+			/*
+				If the field is exact same do not show it at all
+			*/
+			
+			if($old[$key] == $val) {
+				unset($old[$key]);
+				continue;
+			}
+			
+			$out[] = 
+				'<p><strong>'.htmlspecialchars($key).':</strong></p>'.n.
+				'<div class="rah_post_versions_diff">'.
+					rah_post_versions_diff_lib(
+						$old[$key],
+						$val
+					).n.
+				'</div>';
+			
+			unset($old[$key]);
+		}
+		
+		/*
+			List removed fields (removed custom-fields / updated TXP) as removed
+		*/
+		
+		if($old)
+			foreach($old as $key => $val) 
+				$out[] = 
+					'<p><strong><del>'.htmlspecialchars($key).'</del>:</strong></p>'.n.
+					'<div class="rah_post_versions_diff"><span class="rah_post_versions_del">'.htmlspecialchars($val).'</span></div>'.n
+				;
+		
+		if(!isset($out))
+			$out[] = '<p>The revisions are exact match. No changes to show.</p>';
+		
+		return implode('',$out);
+	}
+
+/**
+	Starts splitting the lines, and then implodes the results
+*/
+
+	function rah_post_versions_diff_lib($old, $new){
+		
+		foreach(
+			rah_post_versions_diff_compare(
+				rah_post_versions_explode($old),
+				rah_post_versions_explode($new)
+			) as $key => $line
+		){
+			if(is_array($line)) {
+				if(!empty($line['d']))
+					$out[] = '<span class="rah_post_versions_del">'.htmlspecialchars(implode(n,$line['d'])).'</span>';
+				if(!empty($line['i']))
+					$out[] = '<span class="rah_post_versions_add">'.htmlspecialchars(implode(n,$line['i'])).'</span>';
+			} else
+				$out[] = htmlspecialchars($line);
+		}
+		
+		return implode(n,$out);
+	}
+
+/**
+	Compares lines we just split
+*/
+
+	function rah_post_versions_diff_compare($old, $new, $maxlen = 0){
+
+		/*
+			rah_post_version_diff_compare() function's contents are based on:
+			
+			Paul's Simple Diff Algorithm v 0.1
+			(C) Paul Butler 2007 <http://www.paulbutler.org/>
+			Licensed under GNU GPL compatible zlib/libpng license.
+			
+			***
+
+				This software is provided 'as-is', without any express or implied
+				warranty. In no event will the authors be held liable for any damages
+				arising from the use of this software.
+
+				Permission is granted to anyone to use this software for any purpose,
+				including commercial applications, and to alter it and redistribute it
+				freely, subject to the following restrictions:
+
+					1. The origin of this software must not be misrepresented; you must not
+					claim that you wrote the original software. If you use this software
+					in a product, an acknowledgment in the product documentation would be
+					appreciated but is not required.
+
+					2. Altered source versions must be plainly marked as such, and must not be
+					misrepresented as being the original software.
+
+					3. This notice may not be removed or altered from any source
+					distribution.
+			
+			***
+		*/
+
+		foreach($old as $oindex => $ovalue){
+			$nkeys = array_keys($new, $ovalue);
+			foreach($nkeys as $nindex){
+				$matrix[$oindex][$nindex] = isset($matrix[$oindex - 1][$nindex - 1]) ? $matrix[$oindex - 1][$nindex - 1] + 1 : 1;
+				if($matrix[$oindex][$nindex] > $maxlen){
+					$maxlen = $matrix[$oindex][$nindex];
+					$omax = $oindex + 1 - $maxlen;
+					$nmax = $nindex + 1 - $maxlen;
+				}
+			}
+		}
+		
+		if($maxlen == 0)
+			return array(array('d'=>$old, 'i'=>$new));
+		
+		return 
+			array_merge(
+				rah_post_versions_diff_compare(
+					array_slice($old, 0, $omax),
+					array_slice($new, 0, $nmax)
+				),
+				array_slice($new, $nmax, $maxlen),
+				rah_post_versions_diff_compare(
+					array_slice($old, $omax + $maxlen),
+					array_slice($new, $nmax + $maxlen)
+				)
+			)
+		;
+	}
+
+/**
+	Clean line breaks and do explode.
+*/
+
+	function rah_post_versions_explode($string='') {
+		$string = str_replace(array("\r\n","\r"), n, $string);
+		return explode(n,$string);
+	}
+
+/**
 	Views individual changeset
 */
 
-	function rah_post_versions_view($message='',$slogan='') {
+	function rah_post_versions_view($message='') {
 		
 		global $event;
 		
@@ -887,8 +1134,7 @@ EOF;
 		} else
 			$out[] = '<p>Nothing to show</p>';
 		
-		if(!$slogan)
-			$slogan = 'Viewing change #'.htmlspecialchars($id);
+		$slogan = 'Viewing change #'.htmlspecialchars($id);
 			
 		rah_post_versions_header(
 			$out,$message,$slogan
