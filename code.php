@@ -1,11 +1,11 @@
 <?php	##################
 	#
 	#	rah_post_versions-plugin for Textpattern
-	#	version 0.8
+	#	version 0.9
 	#	by Jukka Svahn
 	#	http://rahforum.biz
 	#
-	#	Copyright (C) 2010 Jukka Svahn
+	#	Copyright (c) 2011 Jukka Svahn
 	#	Licensed under GNU Genral Public License version 2
 	#	http://www.gnu.org/licenses/gpl-2.0.html
 	#
@@ -14,10 +14,13 @@
 	if(@txpinterface == 'admin') {
 		rah_post_versions_install();
 		add_privs('rah_post_versions','1,2');
+		add_privs('plugin_prefs.rah_post_versions','1,2');
 		register_tab('extensions','rah_post_versions','Post versions');
 		register_callback('rah_post_versions_page','rah_post_versions');
 		register_callback('rah_post_versions_css','admin_side','head_end');
 		register_callback('rah_post_versions_messager','admin_side','pagetop_end');
+		register_callback('rah_post_versions_install','plugin_lifecycle.rah_post_versions');
+		register_callback('rah_post_versions_options','plugin_prefs.rah_post_versions');
 		rah_post_versions_register();
 	}
 
@@ -35,27 +38,33 @@
 		
 		$authors = explode(',',$authors);
 		
-		if(in_array(
-			$txp_user,
-			$authors
-		))
+		if(in_array($txp_user,$authors))
 			return;
 
-		$events = explode(',',$events);
-		foreach($events as $event) {
+		foreach(explode(',',$events) as $event) {
 			$item = explode(':',$event);
 			if(isset($item[1]))
 				register_callback('rah_post_versions',trim($item[0]),trim($item[1]),0);
 		}
-		
-		return;
 	}
 
 /**
 	Creates the tables required for the plugin to operate.
 */
 
-	function rah_post_versions_install() {
+	function rah_post_versions_install($event='',$step='') {
+		
+		if($step == 'deleted') {
+			
+			@safe_query(
+				'DROP TABLE IF EXISTS '.
+				safe_pfx('rah_post_versions').', '.
+				safe_pfx('rah_post_versions_sets').', '.
+				safe_pfx('rah_post_versions_prefs')
+			);
+			
+			return;
+		}
 		
 		/*
 			Stores the changesets
@@ -79,7 +88,7 @@
 				`modified` DATETIME NOT NULL default '0000-00-00 00:00:00',
 				`changes` INT(12) NOT NULL default 0,
 				PRIMARY KEY(`id`)
-			) PACK_KEYS=1 AUTO_INCREMENT=1"
+			) PACK_KEYS=1 AUTO_INCREMENT=1 CHARSET=utf8"
 		);
 		
 		/*
@@ -107,7 +116,7 @@
 				`posted` DATETIME NOT NULL default '0000-00-00 00:00:00',
 				`data` LONGTEXT NOT NULL,
 				PRIMARY KEY(`id`)
-			) PACK_KEYS=1 AUTO_INCREMENT=1"
+			) PACK_KEYS=1 AUTO_INCREMENT=1 CHARSET=utf8"
 		);
 		
 		/*
@@ -119,7 +128,7 @@
 				`name` VARCHAR(255) NOT NULL,
 				`value` LONGTEXT NOT NULL,
 				PRIMARY KEY(`name`)
-			)"
+			) CHARSET=utf8"
 		);
 		
 		/*
@@ -201,33 +210,99 @@
 */
 
 	function rah_post_versions_css() {
-		global $event,$step;
+		global $event;
 		
 		if($event != 'rah_post_versions')
 			return;
+			
+		$msg = gTxt('are_you_sure');
 		
-		if(empty($step) || $step == 'rah_post_versions_group')
-			echo <<<EOF
-			<script type="text/javascript">
-				$(document).ready(function(){
-					$('#rah_post_versions_nav').append(' # <span id="rah_post_versions_filter_link">Filter results</span>');
-					$('#rah_post_versions_filter,.rah_post_versions_step').hide();
-					$('#rah_post_versions_filter_link').click(function(){
-						$('#rah_post_versions_filter').slideToggle();
-					});
-					$('#rah_post_versions_container input[type=checkbox]').click(function(){
-						if($('#rah_post_versions_container input[type=checkbox]:checked').val() != null) {
-							$('.rah_post_versions_step').slideDown();
-						} else {
-							$('.rah_post_versions_step').slideUp();
-						}
-					});
-				});
-			</script>
-
-EOF;
-
 		echo <<<EOF
+			<script type="text/javascript">
+				<!--
+				
+				/*
+					Multi-edit function, auto-hiden dropdown
+				*/
+				
+				function rah_post_versions_stepper() {
+					if($('#rah_post_versions_step').length < 1)
+						return;
+					
+					$('#rah_post_versions_step .smallerbox').hide();
+
+					if($('#rah_post_versions_container input[type=checkbox]:checked').val() == null)
+						$('#rah_post_versions_step').hide();
+
+					/*
+						Reset the value
+					*/
+
+					$('#rah_post_versions_container select[name="step"]').val('');
+
+					/*
+						Every time something is checked, check if
+						the dropdown should be shown
+					*/
+
+					$('#rah_post_versions_container input[type=checkbox], #rah_post_versions_container td').click(
+						function(){
+							$('#rah_post_versions_container select[name="step"]').val('');
+							if($('table#list input[type=checkbox]:checked').val() != null)	
+								$('#rah_post_versions_step').slideDown();
+							else
+								$('#rah_post_versions_step').slideUp();
+						}
+					);
+
+					/*
+						If value is changed, send the form
+					*/
+
+					$('#rah_post_versions_container select[name="step"]').change(
+						function(){
+							$(this).parent('p').parent('form').submit();
+						}
+					);
+
+					/*
+						Verify if the sent is allowed
+					*/
+
+					$('select[name="step"]').parent('p').parent('form').submit(
+						function() {
+							if(!verify('{$msg}')) {
+								$('#rah_post_versions_container select[name="step"]').val('');
+								return false;
+							}
+						}
+					);
+				}
+				
+				/*
+					Filtering link
+				*/
+				
+				function rah_post_versions_filter() {
+					if($('#rah_post_versions_filter').length < 1)
+						return;
+					
+					$('#rah_post_versions_nav').append(' <span class="rah_ui_sep">#</span> <a id="rah_post_versions_filter_link">Filter results</a>');
+					$('#rah_post_versions_filter').hide();
+					$('#rah_post_versions_filter_link').click(
+						function(){
+							$('#rah_post_versions_filter').slideToggle();
+							return false;
+						}
+					);
+				}
+			
+				$(document).ready(function(){
+					rah_post_versions_filter();
+					rah_post_versions_stepper();
+				});
+				-->
+			</script>
 			<style type="text/css">
 				#rah_post_versions_container {
 					width: 950px;
@@ -240,7 +315,7 @@ EOF;
 				#rah_post_versions_container table td {
 					padding: 4px 3px;
 				}
-				#rah_post_versions_container .rah_post_versions_step {
+				#rah_post_versions_container #rah_post_versions_step {
 					text-align: right;
 					padding: 10px 0 0 0;
 				}
@@ -263,7 +338,7 @@ EOF;
 				#rah_post_versions_container select {
 					width: 640px;
 				}
-				#rah_post_versions_container .rah_post_versions_step select {
+				#rah_post_versions_container #rah_post_versions_step select {
 					width: 120px;
 				}
 				#rah_post_versions_filter {
@@ -272,15 +347,12 @@ EOF;
 					border-top: 1px solid #ccc;
 					padding: 5px 20px;
 					background: #f5f5f5;
+					margin: 0 0 5px 0;
 				}
 				#rah_post_versions_filter select {
 					width: 200px;
 					margin: 0 2px;
 					padding: 0;
-				}
-				#rah_post_versions_filter_link {
-					cursor: pointer;
-					text-decoration: underline;
 				}
 				#rah_post_versions_pages {
 					text-align: center;
@@ -516,7 +588,7 @@ EOF;
 			'			</select>'.n.
 			'			<input type="submit" value="Filter" class="smallerbox" />'.n.
 			'		</form>'.n.
-			'		<form method="post" action="index.php" onsubmit="return verify(\'Are you sure?\')">'.n.
+			'		<form method="post" action="index.php">'.n.
 			
 			rah_post_versions_input(
 				array(
@@ -524,7 +596,7 @@ EOF;
 				)
 			).n.
 			
-			'			<table id="list" class="list" cellspacing="0" cellpadding="0">'.n.
+			'			<table id="list" cellspacing="0" cellpadding="0">'.n.
 			'				<tr>'.n.
 			'					<th>#ID</th>'.n.
 			'					<th>Event</th>'.n.
@@ -575,12 +647,12 @@ EOF;
 			'			</table>'.n.
 			rah_post_versions_pagination($total).n.
 			
-			'			<p class="rah_post_versions_step">'.n.
+			'			<p id="rah_post_versions_step" class="rah_ui_step">'.n.
 			'				<select name="step">'.n.
 			'					<option value="">With selected...</option>'.n.
 			'					<option value="rah_post_versions_group_delete">Delete changeset</option>'.n.
 			'				</select>'.n.
-			'				<input type="submit" class="smallerbox" value="Go" />'.n.
+			'				<input type="submit" class="smallerbox" value="'.gTxt('go').'" />'.n.
 			'			</p>'.n.
 			'		</form>'.n.
 			'	</div>'.n;
@@ -601,7 +673,7 @@ EOF;
 		
 		$selected = ps('selected');
 		
-		if(!is_array($selected)) {
+		if(!is_array($selected) || empty($selected)) {
 			rah_post_versions_list('Nothing selected.');
 			return;
 		}
@@ -609,26 +681,23 @@ EOF;
 		foreach($selected as $id)
 			$in[] = "'".doSlash($id)."'";
 		
-		if(!isset($in)) {
-			rah_post_versions_list('Something gone wrong.');
-			return;
-		}
-		
 		$in = implode(',',$in);
 		
-		
-		safe_delete(
-			'rah_post_versions',
-			'setid in('.$in.')'
-		);
-		
-		safe_delete(
-			'rah_post_versions_sets',
-			'id in('.$in.')'
-		);
+		if(
+			safe_delete(
+				'rah_post_versions',
+				'setid in('.$in.')'
+			) == false ||
+			safe_delete(
+				'rah_post_versions_sets',
+				'id in('.$in.')'
+			) == false
+		) {
+			rah_post_versions_list('Database error occured when removing items. Please try again.');
+			return;	
+		}
 		
 		rah_post_versions_list('Selection removed.');
-		
 	}
 
 /**
@@ -723,7 +792,7 @@ EOF;
 			'			<input type="submit" value="Filter" class="smallerbox" />'.n.
 			'		</form>'.n.
 			
-			'		<form method="post" action="index.php" onsubmit="return verify(\'Are you sure?\')">'.n.
+			'		<form method="post" action="index.php">'.n.
 			
 			rah_post_versions_input(
 				array(
@@ -733,7 +802,7 @@ EOF;
 				)
 			).n.
 			
-			'			<table id="list" class="list" cellspacing="0" cellpadding="0">'.n.
+			'			<table id="list" cellspacing="0" cellpadding="0">'.n.
 			'				<tr>'.n.
 			'					<th>#ID</th>'.n.
 			'					<th>Title</th>'.n.
@@ -780,7 +849,7 @@ EOF;
 			
 			rah_post_versions_pagination($total,'group_limit','group_page').n.
 			
-			'			<p class="rah_post_versions_step">'.n.
+			'			<p id="rah_post_versions_step" class="rah_ui_step">'.n.
 			'				<select name="step">'.n.
 			'					<option value="">With selected...</option>'.n.
 			'					<option value="rah_post_versions_diff">Diff</option>'.n.
@@ -804,7 +873,7 @@ EOF;
 	function rah_post_versions_delete() {
 		$selected = ps('selected');
 		
-		if(!is_array($selected)) {
+		if(!is_array($selected) || empty($selected)) {
 			rah_post_versions_group('Nothing selected.');
 			return;
 		}
@@ -812,17 +881,17 @@ EOF;
 		foreach($selected as $id)
 			$in[] = "'".doSlash($id)."'";
 		
-		if(!isset($in)) {
-			rah_post_versions_group('Something gone wrong.');
-			return;
-		}
-		
 		$in = implode(',',$in);
 		
-		safe_delete(
-			'rah_post_versions',
-			'id in('.$in.')'
-		);
+		if(
+			safe_delete(
+				'rah_post_versions',
+				'id in('.$in.')'
+			) == false
+		) {
+			rah_post_versions_group('Database error occured when removing items. Please try again.');
+			return;	
+		}
 		
 		rah_post_versions_group('Selection removed.');
 	}
@@ -902,9 +971,11 @@ EOF;
 			$old['rah_article_versions_repost_is'],
 			$old['rah_article_versions_repost_uri'],
 			$old['rah_article_versions_repost_id'],
+			$old['_txp_token'],
 			$new['rah_article_versions_repost_id'],
 			$new['rah_article_versions_repost_is'],
-			$new['rah_article_versions_repost_uri']
+			$new['rah_article_versions_repost_uri'],
+			$new['_txp_token']
 		);
 		
 		foreach($new as $key => $val) {
@@ -1153,6 +1224,10 @@ EOF;
 				'			<input type="hidden" name="rah_article_versions_repost_is" value="1" />'.n.
 				'			<input type="hidden" name="rah_article_versions_repost_uri" value="'.htmlspecialchars($back).'" />'.n.
 				'			<input type="hidden" name="rah_article_versions_repost_id" value="'.htmlspecialchars($id).'" />'.n.
+				
+				(function_exists('form_token') ? 
+					'			<input type="hidden" name="_txp_token" value="'.form_token().'" />'.n : ''
+				).
 				
 				'			<p id="rah_post_versions_warning"><strong>Notice:</strong> Only click the <em>Re-post this</em> button when you are certain what you are about to do. Clicking the button will redo the exact posting, and depending of the information state stored, it might either overwrite, partially replace or dublicate something.</p>'.n.
 				'			<p><input type="submit" class="publish" value="Re-post this" /></p>'.n.
@@ -1447,7 +1522,8 @@ EOF;
 			if(in_array($key,array(
 				'rah_article_versions_repost_is',
 				'rah_article_versions_repost_uri',
-				'rah_article_versions_repost_id'
+				'rah_article_versions_repost_id',
+				'_txp_token'
 			)))
 				continue;
 			
@@ -1552,13 +1628,13 @@ EOF;
 		
 		echo 
 			n.
-			'	<div id="rah_post_versions_container">'.n.
+			'	<div id="rah_post_versions_container" class="rah_ui_container">'.n.
 			'		<h1><strong>rah_post_versions</strong> | '.$slogan.'</h1>'.n.
 			
-			'		<p id="rah_post_versions_nav">'.
-			' &#187; <a href="'.rah_post_versions_uri(array('event' => $event)).'">Main</a> '.
-			' &#187; <a href="'.rah_post_versions_uri(array('event' => $event,'step' => 'rah_post_versions_prefs')).'">Preferences</a> '.
-			' &#187; <a href="?event=plugin&amp;step=plugin_help&amp;name=rah_post_versions">Documentation</a>'.
+			'		<p id="rah_post_versions_nav" class="rah_ui_nav">'.
+			' <span class="rah_ui_sep">&#187;</span> <a href="'.rah_post_versions_uri(array('event' => $event)).'">Main</a> '.
+			' <span class="rah_ui_sep">&#187;</span> <a href="'.rah_post_versions_uri(array('event' => $event,'step' => 'rah_post_versions_prefs')).'">Preferences</a> '.
+			' <span class="rah_ui_sep">&#187;</span> <a href="?event=plugin&amp;step=plugin_help&amp;name=rah_post_versions">Documentation</a>'.
 					
 			'</p>'.n.
 			$content.n.
@@ -1601,8 +1677,8 @@ EOF;
 		if(is_array($plugin_areas))
 			$areas = array_merge_recursive($areas, $plugin_areas);
 		
-		foreach ($areas as $group) 
-			foreach ($group as $title => $name) 
+		foreach($areas as $group) 
+			foreach($group as $title => $name) 
 				$out[$name] = $title;
 		
 		return $out;
@@ -1632,3 +1708,16 @@ EOF;
 		return
 			implode(n,$out);
 	}
+
+/**
+	Redirects to the preferences panel
+*/
+
+	function rah_post_versions_options() {
+		header('Location: ?event=rah_post_versions');
+		echo 
+			'<p id="message">'.n.
+			'	<a href="?event=rah_post_versions">'.gTxt('continue').'</a>'.n.
+			'</p>';
+	}
+?>
