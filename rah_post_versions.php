@@ -491,6 +491,7 @@ class rah_post_versions {
 	protected $static_dir = false;
 	protected $static_header = '';
 	protected $nowrite = false;
+	protected $compress = false;
 
 	/**
 	 * Initialize required
@@ -498,6 +499,7 @@ class rah_post_versions {
 
 	public function __construct() {
 		$this->go_static();
+		$this->compression();
 	}
 
 	/**
@@ -559,6 +561,23 @@ class rah_post_versions {
 		
 		return $this->events;
 	}
+	
+	/**
+	 * Check for availability of compression methods
+	 * @return bool
+	 */
+
+	protected function compression() {
+		if(
+			defined('rah_post_versions_compress') &&
+			function_exists('gzencode') &&
+			function_exists('gzinflate')
+		) {
+			$this->compress = true;
+		}
+		
+		return $this->compress;
+	}
 
 	/**
 	 * Get revision from database
@@ -575,21 +594,39 @@ class rah_post_versions {
 				$where . ' LIMIT 0, 1'
 			);
 		
-		if($r && $this->nowrite == true)
+		if(!$r) {
+			return array();
+		}
+		
+		if($this->nowrite == true) {
 			$r['data'] = '';
+		}
 		
-		if(!$r || !$this->static_dir)
-			return $r;
+		if($r && $this->static_dir) {
 		
-		$file = $this->static_dir . DS . $r['setid'] . '_r' . $r['id'] . '.php';
+			$file = $this->static_dir . DS . $r['setid'] . '_r' . $r['id'] . '.php';
+			
+			if(file_exists($file) && is_file($file) && is_readable($file)) {
+				ob_start();
+				include $file;
+				$r['data'] = ob_get_contents();
+				ob_end_clean();
+			}
+			
+			else {
+				$r['data'] = '';
+			}
+		}
 		
-		if(file_exists($file) && is_file($file) && is_readable($file)) {
-			ob_start();
-			include $file;
-			$r['data'] = ob_get_contents();
-			ob_end_clean();
-		} else
-			$r['data'] = '';
+		if(!empty($r['data'])) {
+			@$r['data'] = base64_decode($r['data']);
+
+			if($this->compress && strncmp($r['data'], "\x1F\x8B", 2) === 0) {
+				$r['data'] = gzinflate(substr($r['data'], 10));
+			}
+			
+			$r['data'] = unserialize($r['data']);
+		}
 
 		return $r;
 	}
@@ -651,16 +688,11 @@ class rah_post_versions {
 			)
 		)
 			return false;
-
-		$data['data'] = base64_encode(serialize($data['data']));
 		
 		foreach($data as $name => $value)
 			$sql[$name] = $name."='".doSlash($value)."'";
 		
 		$sql['posted'] = 'posted=now()';
-		
-		if($this->static_dir)
-			unset($sql['data']);
 		
 		$r = 
 			safe_row(
@@ -711,6 +743,21 @@ class rah_post_versions {
 				) == false
 			)
 				return false;
+		}
+		
+		if($this->compress) {
+			$data['data'] = base64_encode(gzencode(serialize($data['data'])));
+		}
+		else {
+			$data['data'] = base64_encode(serialize($data['data']));
+		}
+		
+		if($this->static_dir) {
+			unset($sql['data']);
+		}
+		
+		else {
+			$sql['data'] = "data='".doSlash($data)."'";
 		}
 		
 		$sql['setid'] = "setid='".doSlash($data['setid'])."'";
@@ -832,6 +879,7 @@ class rah_post_versions_panes extends rah_post_versions {
 
 	public function __construct() {
 		$this->go_static();
+		$this->compression();
 		$this->sort = new rah_post_versions_sort();
 		$this->ui = new rah_post_versions_widgets($this->sort);
 		$this->diff = new rah_post_versions_diff();
@@ -1243,8 +1291,7 @@ class rah_post_versions_panes extends rah_post_versions {
 			return;
 		}
 		
-		$new = unserialize(base64_decode($r['data']));
-		$old = unserialize(base64_decode($old));
+		$new = $r['data'];
 		
 		if($new == $old) {
 			$this->msg('revisions_match')->changes();
@@ -1375,7 +1422,7 @@ class rah_post_versions_panes extends rah_post_versions {
 				'setid='.$rs['setid'].' and id <= '.$rs['id'].' ORDER BY id desc LIMIT 1, 1'
 			);
 		
-		$data = unserialize(base64_decode($rs['data']));
+		$data = $rs['data'];
 			
 		$out[] =
 			
