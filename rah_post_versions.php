@@ -606,11 +606,8 @@ class rah_post_versions {
 		
 		if(
 			$this->nowrite == true ||
-			empty($data) || 
-			!is_array($data) || 
+			empty($data['data']) ||
 			count($data) != 6 ||
-			!isset($data['data']) || 
-			empty($data['data']) || 
 			!is_array($data['data']) ||
 			!isset($data['author']) ||
 			in_array($data['author'], do_list($prefs[$this->pfx.'_authors']))
