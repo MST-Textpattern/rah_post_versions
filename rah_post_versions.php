@@ -14,28 +14,47 @@
  */
 
 	if(@txpinterface == 'admin') {
-		rah_post_versions_install();
-		rah_post_versions_push();
+		rah_post_versions::install();
+		rah_post_versions::push();
 		add_privs('rah_post_versions', '1,2');
 		add_privs('rah_post_versions_delete', '1');
 		add_privs('rah_post_versions_preferences', '1');
 		add_privs('plugin_prefs.rah_post_versions', '1,2');
 		register_tab('extensions','rah_post_versions', gTxt('rah_post_versions'));
-		register_callback('rah_post_versions_page', 'rah_post_versions');
-		register_callback('rah_post_versions_head', 'admin_side', 'head_end');
-		register_callback('rah_post_versions_messager', 'admin_side', 'pagetop_end');
-		register_callback('rah_post_versions_install', 'plugin_lifecycle.rah_post_versions');
-		register_callback('rah_post_versions_options', 'plugin_prefs.rah_post_versions');
+		register_callback(array('rah_post_versions', 'deliver'), 'rah_post_versions');
+		register_callback(array('rah_post_versions', 'head'), 'admin_side', 'head_end');
+		register_callback(array('rah_post_versions', 'messager'), 'admin_side', 'pagetop_end');
+		register_callback(array('rah_post_versions', 'install'), 'plugin_lifecycle.rah_post_versions');
+		register_callback(array('rah_post_versions', 'prefs'), 'plugin_prefs.rah_post_versions');
 	}
 
 /**
- * Installer
- * @param string $event
- * @param string $step
- * @return nothing
+ * Main class
  */
 
-	function rah_post_versions_install($event='', $step='') {
+class rah_post_versions {
+
+	protected $event = 'rah_post_versions';
+	protected $pfx = 'rah_post_versions';
+	protected $prefs_group = 'rah_postver';
+	protected $list_filters = array();
+	protected $ui;
+	protected $diff;
+	protected $sort;
+	protected $events = array();
+	protected $static_dir = false;
+	protected $static_header = '';
+	protected $nowrite = false;
+	protected $compress = false;
+
+	/**
+	 * Installer
+	 * @param string $event
+	 * @param string $step
+	 * @return nothing
+	 */
+
+	static public function install($event='', $step='') {
 		
 		global $prefs;
 		
@@ -234,20 +253,23 @@
 		$prefs['rah_post_versions_version'] = $version;
 	}
 
-/**
- * Deliver panels
- */
+	/**
+	 * Redirects to the plugin's admin-side panel
+	 */
 
-	function rah_post_versions_page() {
-		$uix = new rah_post_versions_panes();
-		$uix->panes();
+	static public function prefs() {
+		header('Location: ?event=rah_post_versions');
+		echo 
+			'<p id="message">'.n.
+			'	<a href="?event=rah_post_versions">'.gTxt('continue').'</a>'.n.
+			'</p>';
 	}
 
-/**
- * Adds the panel's CSS and JavaScript to the <head>.
- */
+	/**
+	 * Adds the panel's CSS and JavaScript to the <head>.
+	 */
 
-	function rah_post_versions_head() {
+	static public function head() {
 		global $event;
 
 		if($event != 'rah_post_versions')
@@ -474,24 +496,107 @@
 EOF;
 	}
 
-/**
- * Main class
- */
+	/**
+	 * Picks changes from HTTP POST data.
+	 * @param string $callback Callback event the function was called on.
+	 * @return Nothing
+	 */
 
-class rah_post_versions {
+	static public function push($callback=NULL) {
+		
+		global $txp_user, $event, $step, $prefs;
+		
+		if($callback === NULL) {
 
-	protected $event = 'rah_post_versions';
-	protected $pfx = 'rah_post_versions';
-	protected $prefs_group = 'rah_postver';
-	protected $list_filters = array();
-	protected $ui;
-	protected $diff;
-	protected $sort;
-	protected $events = array();
-	protected $static_dir = false;
-	protected $static_header = '';
-	protected $nowrite = false;
-	protected $compress = false;
+			foreach(explode(',',$prefs['rah_post_versions_events']) as $e)
+				if(($e = explode(':',$e)) && count($e) == 2)
+					register_callback('rah_post_versions_push',trim($e[0]),trim($e[1]),0);
+
+			return;
+		}
+
+		/*
+			Check if the step has post
+		*/
+		
+		if(!isset($_POST) || !is_array($_POST) || empty($_POST))
+			return;
+		
+		/*
+			Evaluates ident code
+		*/
+		
+		eval($prefs['rah_post_versions_ident']);
+		
+		/*
+			Check if the ident code returned the data we want
+		*/
+		
+		if(isset($kill) || !isset($grid) || !isset($title))
+			return;
+		
+		$f = new rah_post_versions();
+		
+		/*
+			Build data array
+		*/
+		
+		foreach($_POST as $key => $value)
+			$data[$key] = ps($key);
+		
+		$f->create_revision(
+			array(
+				'grid' => $grid,
+				'title' => $title,
+				'author' => $txp_user,
+				'event' => $event,
+				'step' => $step,
+				'data' => $data
+			)
+		);
+	}
+
+	/**
+	 * Shows a message after reverting
+	 */
+
+	static public function messager() {
+		
+		if(!ps('rah_post_versions_repost_item') || ps('_txp_token') != form_token())
+			return;
+		
+		extract(
+			doArray(
+				psa(array(
+					'rah_post_versions_repost_item',
+					'rah_post_versions_repost_id'
+				)), 'htmlspecialchars'
+			)
+		);
+		
+		echo 
+			'<div id="rah_post_versions_messager" style="text-align: center;">'.
+				gTxt(
+					'rah_post_versions_reposted_form_id',
+					array(
+						'{id}' => 'r'.$rah_post_versions_repost_id,
+						'{go_back}' => '<a href="?event=rah_post_versions&amp;step=changes&amp;item='.$rah_post_versions_repost_item.'">'.gTxt('rah_post_versions_go_back_to_listing').'</a>'
+					),
+					false
+				).
+			'</div>';
+		
+		callback_event('rah_post_versions_tasks', 'messager_called');
+	}
+
+	/**
+	 * Deliver panels
+	 */
+
+	static public function deliver() {
+		$uix = new rah_post_versions_panes();
+		$uix->panes();
+	}
 
 	/**
 	 * Initialize required
@@ -2158,39 +2263,6 @@ class rah_post_versions_diff extends rah_post_versions {
 }
 
 /**
- * Shows a message after reverting
- */
-
-	function rah_post_versions_messager() {
-		
-		if(!ps('rah_post_versions_repost_item') || ps('_txp_token') != form_token())
-			return;
-		
-		extract(
-			doArray(
-				psa(array(
-					'rah_post_versions_repost_item',
-					'rah_post_versions_repost_id'
-				)), 'htmlspecialchars'
-			)
-		);
-		
-		echo 
-			'<div id="rah_post_versions_messager" style="text-align: center;">'.
-				gTxt(
-					'rah_post_versions_reposted_form_id',
-					array(
-						'{id}' => 'r'.$rah_post_versions_repost_id,
-						'{go_back}' => '<a href="?event=rah_post_versions&amp;step=changes&amp;item='.$rah_post_versions_repost_item.'">'.gTxt('rah_post_versions_go_back_to_listing').'</a>'
-					),
-					false
-				).
-			'</div>';
-		
-		callback_event('rah_post_versions_tasks', 'messager_called');
-	}
-
-/**
  * Returns the item's ID (if any).
  * @param string $key Name of the POST field containing the ID.
  * @return int
@@ -2201,78 +2273,6 @@ class rah_post_versions_diff extends rah_post_versions {
 		if(!$id && isset($GLOBALS['ID']))
 			$id = $GLOBALS['ID'];
 		return $id;
-	}
-
-/**
- * Picks changes from HTTP POST data.
- * @param string $callback Callback event the function was called on.
- * @return Nothing
- */
-
-	function rah_post_versions_push($callback=NULL) {
-		
-		global $txp_user, $event, $step, $prefs;
-		
-		if($callback === NULL) {
-
-			foreach(explode(',',$prefs['rah_post_versions_events']) as $e)
-				if(($e = explode(':',$e)) && count($e) == 2)
-					register_callback('rah_post_versions_push',trim($e[0]),trim($e[1]),0);
-
-			return;
-		}
-
-		/*
-			Check if the step has post
-		*/
-		
-		if(!isset($_POST) || !is_array($_POST) || empty($_POST))
-			return;
-		
-		/*
-			Evaluates ident code
-		*/
-		
-		eval($prefs['rah_post_versions_ident']);
-		
-		/*
-			Check if the ident code returned the data we want
-		*/
-		
-		if(isset($kill) || !isset($grid) || !isset($title))
-			return;
-		
-		$f = new rah_post_versions();
-		
-		/*
-			Build data array
-		*/
-		
-		foreach($_POST as $key => $value)
-			$data[$key] = ps($key);
-		
-		$f->create_revision(
-			array(
-				'grid' => $grid,
-				'title' => $title,
-				'author' => $txp_user,
-				'event' => $event,
-				'step' => $step,
-				'data' => $data
-			)
-		);
-	}
-
-/**
- * Redirects to the plugin's admin-side panel
- */
-
-	function rah_post_versions_options() {
-		header('Location: ?event=rah_post_versions');
-		echo 
-			'<p id="message">'.n.
-			'	<a href="?event=rah_post_versions">'.gTxt('continue').'</a>'.n.
-			'</p>';
 	}
 
 /**
