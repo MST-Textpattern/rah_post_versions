@@ -510,7 +510,7 @@ EOF;
 
 			foreach(explode(',',$prefs['rah_post_versions_events']) as $e)
 				if(($e = explode(':',$e)) && count($e) == 2)
-					register_callback('rah_post_versions_push',trim($e[0]),trim($e[1]),0);
+					register_callback(array('rah_post_versions', 'push'),trim($e[0]),trim($e[1]),0);
 
 			return;
 		}
