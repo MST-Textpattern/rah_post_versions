@@ -1,7 +1,7 @@
 #@admin
 #Default language, en-us, en-gb
-rah_post_versions => Post Versions
-rah_postver => Post Versions
+rah_post_versions => Versions
+rah_postver => Versions
 rah_post_versions_main => Main
 rah_post_versions_preferences => Preferences
 rah_post_versions_id => ID
