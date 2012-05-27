@@ -16,7 +16,7 @@ h2. Requirements
 
 p. Rah_post_versions' minimum requirements:
 
-* Textpattern 4.4.1 or newer.
+* Textpattern 4.5.0 or newer.
 * PHP 5.2.0 or newer.
 
 h2. Installation
