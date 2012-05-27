@@ -34,6 +34,7 @@
 
 class rah_post_versions {
 
+	static public $version = '1.0';
 	protected $event = 'rah_post_versions';
 	protected $pfx = 'rah_post_versions';
 	protected $prefs_group = 'rah_postver';
@@ -74,12 +75,10 @@ class rah_post_versions {
 			return;
 		}
 		
-		$version = '1.0';
-		
 		$current = isset($prefs['rah_post_versions_version']) ? 
 			$prefs['rah_post_versions_version'] : 'base';
 			
-		if($version == $current)
+		if(self::$version == $current)
 			return;
 		
 		/*
@@ -249,8 +248,8 @@ class rah_post_versions {
 			$position++;
 		}
 		
-		set_pref('rah_post_versions_version', $version, 'rah_postver', 2, '', 0);
-		$prefs['rah_post_versions_version'] = $version;
+		set_pref('rah_post_versions_version', self::$version, 'rah_postver', 2, '', 0);
+		$prefs['rah_post_versions_version'] = self::$version;
 	}
 
 	/**
