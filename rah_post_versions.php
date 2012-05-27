@@ -280,7 +280,7 @@ class rah_post_versions {
 		echo <<<EOF
 			<script type="text/javascript">
 				<!--
-				{$pfx} = function () {
+				$(document).ready(function(){
 					
 					var pfx = '{$pfx}';
 					var pane = $('#'+pfx+'_container');
@@ -391,12 +391,8 @@ class rah_post_versions {
 							}
 						);
 					})();
-				};
-
-				$(document).ready(function(){
-					{$pfx}();
 				});
-				-->
+				//-->
 			</script>
 			<style type="text/css">
 				#{$pfx}_container {
