@@ -1034,7 +1034,7 @@ class rah_post_versions_panes extends rah_post_versions {
 			eInput($this->event).n.
 			tInput().n.
 			
-			'		<table cellspacing="0" cellpadding="0" id="list">'.n
+			'		<table class="txp-list">'.n
 		);
 		
 		$show_selects = has_privs($this->pfx.'_delete');
@@ -1179,7 +1179,7 @@ class rah_post_versions_panes extends rah_post_versions {
 			hInput('item', $id).n.
 			tInput().n.
 			
-			'		<table id="list" cellspacing="0" cellpadding="0">'.n
+			'		<table class="txp-list">'.n
 		);
 		
 		$this->ui->
