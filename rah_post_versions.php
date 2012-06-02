@@ -1982,7 +1982,7 @@ class rah_post_versions_widgets extends rah_post_versions {
 			$this->out = implode('', $this->out);
 		
 		echo 
-			n.'<div id="'.$this->event.'_container" class="rah_ui_container">'.n.
+			n.'<div id="'.$this->event.'_container" class="txp-container">'.n.
 				$this->out.n.
 			'</div>'.n;
 	}
