@@ -274,7 +274,7 @@ class rah_post_versions {
 		if($event != 'rah_post_versions')
 			return;
 
-		$msg = gTxt('are_you_sure');
+		$msg = escape_js(gTxt('are_you_sure'));
 		$pfx = 'rah_post_versions';
 
 		echo <<<EOF
