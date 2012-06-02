@@ -395,10 +395,6 @@ class rah_post_versions {
 				//-->
 			</script>
 			<style type="text/css">
-				#{$pfx}_container {
-					width: 950px;
-					margin: 0 auto;
-				}
 				#{$pfx}_container .rah_ui_list_actions {
 					margin: 10px 0;
 					overflow: hidden;
