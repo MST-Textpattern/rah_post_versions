@@ -299,7 +299,7 @@ class rah_post_versions {
 						if(!steps.length)
 							return;
 						
-						steps.children('.smallerbox').hide();
+						steps.children('input[type=submit]').hide();
 						
 						pane.find('th.rah_ui_selectall').html(
 							'<input type="checkbox" name="selectall" value="1" />'
@@ -1111,7 +1111,7 @@ class rah_post_versions_panes extends rah_post_versions {
 				'				<option value="">'.gTxt($this->pfx.'_with_selected').'</option>'.n.
 				'				<option value="delete_item">'.gTxt($this->pfx.'_delete').'</option>'.n.
 				'			</select>'.n.
-				'			<input type="submit" class="smallerbox" value="'.gTxt('go').'" />'.n.
+				'			<input type="submit" value="'.gTxt('go').'" />'.n.
 				'		</div>'.n : ''
 			).
 			
@@ -1245,7 +1245,7 @@ class rah_post_versions_panes extends rah_post_versions {
 				'					<option value="delete_revision">'.gTxt($this->pfx.'_delete').'</option>'.n : ''
 			).
 			'				</select>'.n.
-			'				<input type="submit" class="smallerbox" value="'.gTxt('go').'" />'.n.
+			'				<input type="submit" value="'.gTxt('go').'" />'.n.
 			'			</div>'.n.
 			'		</div>'.n.
 			'	</form>'.n
