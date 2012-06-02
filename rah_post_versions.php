@@ -1917,10 +1917,10 @@ class rah_post_versions_widgets extends rah_post_versions {
 	public function nav() {
 		
 		foreach($this->link as $label => $uri)
-			$nav[] = '<span class="rah_ui_sep">&#187;</span> <a href="'.$uri.'">'.$label.'</a>';
+			$nav[] = '<a class="navlink" href="'.$uri.'">'.$label.'</a>';
 		
 		$this->out[] = 
-			'	<p class="rah_ui_nav">' . implode(' ', $nav) . '</p>'.n;
+			'	<p class="nav-terriatery">' . implode('', $nav) . '</p>'.n;
 			
 		$this->link = array();
 		
