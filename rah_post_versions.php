@@ -420,20 +420,9 @@ class rah_post_versions {
 					float: right;
 					text-align: right;
 				}
-				#{$pfx}_container .rah_ui_step select {
-					width: 120px;
-				}
 				#{$pfx}_actions {
 					border-bottom: 1px solid #ccc;
 					padding: 0 0 5px 0;
-				}
-				#{$pfx}_container table {
-					width: 100%;
-				}
-				#{$pfx}_container input.edit,
-				#{$pfx}_container textarea {
-					width: 948px;
-					padding: 0;
 				}
 				.rah_ui_add,
 				.rah_ui_del {
@@ -1570,7 +1559,6 @@ class rah_post_versions_panes extends rah_post_versions {
 					'<input type="text" '.
 						'name="'.$name.'" '.
 						'value="'.$value.'" '.
-						'class="edit" '.
 					'/>' 
 				:
 					'<textarea '.
