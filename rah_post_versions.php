@@ -455,8 +455,8 @@ class rah_post_versions {
 					box-shadow: inset 1px 0 0 #efefef, inset 4px 0 0 #e5e3e3, inset 5px 0 0 #dcdada;
 				}
 				.{$pfx}_diff,
-				.{$pfx}_add,
-				.{$pfx}_del {
+				.rah_ui_add,
+				.rah_ui_del {
 					-moz-border-radius: 3px;
 					-webkit-border-radius: 3px;
 					-khtml-border-radius: 3px;
@@ -464,8 +464,8 @@ class rah_post_versions {
 					-ms-border-radius: 3px;
 					border-radius: 3px;
 				}
-				.{$pfx}_add,
-				.{$pfx}_del {
+				.rah_ui_add,
+				.rah_ui_del {
 					-moz-box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
 					-webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
 					-khtml-box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
@@ -474,11 +474,11 @@ class rah_post_versions {
 					box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
 					color: #000;
 				}
-				.{$pfx}_add {
+				.rah_ui_add {
 					background: #a7d726;
 					border: 1px solid #829b3e;
 				}
-				.{$pfx}_del {
+				.rah_ui_del {
 					background: #c54e4e;
 					border: 1px solid #8b3e3e;
 				}
@@ -2126,11 +2126,11 @@ class rah_post_versions_widgets extends rah_post_versions {
  * Produces inline diffs, comparison tool
  */
 
-class rah_post_versions_diff extends rah_post_versions {
+class rah_post_versions_diff {
 
 	public $old;
 	public $new;
-	private $delimiter = n;
+	protected $delimiter = n;
 	
 	public function __construct() {
 	}
@@ -2140,10 +2140,11 @@ class rah_post_versions_diff extends rah_post_versions {
 	 * @param string|array $string
 	 */
 
-	private function lines($string) {
+	protected function lines($string) {
 		
-		if(is_array($string))
+		if(is_array($string)) {
 			$string = implode(n, $string);
+		}
 		
 		return 	
 			explode($this->delimiter,
@@ -2167,16 +2168,20 @@ class rah_post_versions_diff extends rah_post_versions {
 				if(
 					!empty($line['d']) &&
 					($d = implode($this->delimiter,$line['d'])) !== ''
-				)
-					$out[] = '<span class="'.$this->pfx.'_del">'.$d.'</span>';
+				) {
+					$out[] = '<span class="rah_ui_del">'.$d.'</span>';
+				}
 				
-				if(!empty($line['i']))
+				if(!empty($line['i'])) {
 					$out[] = 
-						'<span class="'.$this->pfx.'_add">'.
-							implode($this->delimiter,$line['i']).
+						'<span class="rah_ui_add">'.
+							implode($this->delimiter, $line['i']).
 						'</span>';
-			} else
+				}
+			}
+			else {
 				$out[] = $line;
+			}
 		}
 		
 		return implode($this->delimiter,$out);
@@ -2222,11 +2227,13 @@ class rah_post_versions_diff extends rah_post_versions {
 
 		foreach($old as $oindex => $ovalue){
 			$nkeys = array_keys($new, $ovalue);
-			foreach($nkeys as $nindex){
+			
+			foreach($nkeys as $nindex) {
 				$matrix[$oindex][$nindex] = 
 					isset($matrix[$oindex - 1][$nindex - 1]) ? 
 						$matrix[$oindex - 1][$nindex - 1] + 1 : 1;
-				if($matrix[$oindex][$nindex] > $maxlen){
+				
+				if($matrix[$oindex][$nindex] > $maxlen) {
 					$maxlen = $matrix[$oindex][$nindex];
 					$omax = $oindex + 1 - $maxlen;
 					$nmax = $nindex + 1 - $maxlen;
