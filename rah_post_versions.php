@@ -435,26 +435,6 @@ class rah_post_versions {
 					width: 948px;
 					padding: 0;
 				}
-				.{$pfx}_label {
-					margin: 10px 0 1px 0;
-				}
-				.{$pfx}_diff {
-					overflow: auto;
-					white-space: pre;
-					font: 1.1em "Courier New", Courier, "Andele Mono", Menlo, Consolas, Console, Monaco, monospace;
-					line-height: 1.6em;
-					background: #eee;
-					border: 1px solid #ccc;
-					padding: 10px;
-					margin: 0;
-					-moz-box-shadow: inset 1px 0 0 #efefef, inset 4px 0 0 #e5e3e3, inset 5px 0 0 #dcdada;
-					-webkit-box-shadow: inset 1px 0 0 #efefef, inset 4px 0 0 #e5e3e3, inset 5px 0 0 #dcdada;
-					-khtml-box-shadow: inset 1px 0 0 #efefef, inset 4px 0 0 #e5e3e3, inset 5px 0 0 #dcdada;
-					-o-box-shadow: inset 1px 0 0 #efefef, inset 4px 0 0 #e5e3e3, inset 5px 0 0 #dcdada;
-					-ms-box-shadow: inset 1px 0 0 #efefef, inset 4px 0 0 #e5e3e3, inset 5px 0 0 #dcdada;
-					box-shadow: inset 1px 0 0 #efefef, inset 4px 0 0 #e5e3e3, inset 5px 0 0 #dcdada;
-				}
-				.{$pfx}_diff,
 				.rah_ui_add,
 				.rah_ui_del {
 					-moz-border-radius: 3px;
@@ -1460,10 +1440,10 @@ class rah_post_versions_panes extends rah_post_versions {
 			$this->diff->new = $val;
 			
 			$this->ui->add( 
-				'<div class="'.$this->pfx.'_label">'.htmlspecialchars($key).'</div>'.n.
-				'<div class="'.$this->pfx.'_diff">'.
+				'<p>'.htmlspecialchars($key).'</p>'.n.
+				'<pre>'.
 					$this->diff->html().
-				'</div>'
+				'</pre>'
 			);
 			
 			unset($old[$key]);
