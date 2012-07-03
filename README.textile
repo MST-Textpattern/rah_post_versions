@@ -47,25 +47,17 @@ h2. Preferences and configuration
 
 p. Preferences panel lets the user change some of the common settings. Available settings are as follows.
 
-h3. Ignored field names
+h3. Compress repository data?
 
-p. Fields listed are not stored in the version control system. The preference takes comma-separated list of field names, i.e. name attribute from HTML textareas inputs, buttons, and select fields.
+p. If set to yes, created repository data is compressed using Gzip.
 
 h3. Ignored authors
 
 p. Changes done by authors listed are not stored in the version control system. They field takes comma-separated list of login names. By default no authors are ignored.
 
-h3. Watched admin-side events
+h3. Path to repository directory
 
-p. The preference chooses which admin-side page's are watched for changes. The field includes long list of admin-side event and step pairs. When one of the events is accessed, the data sent by the client is stored as a revision in the version control system.
-
-h3. Hidden fields
-
-p. Fields listed in the hidden fields are stored, but hidden. When viewing an individual revision the field's content are not directly visible. Default value is @event,step,save@.
-
-h3. Commit identification code
-
-p. Identification code decides how revisions should be detected and what the modified items are. Identification makes whole identification progress possible, without it, it would be impossible to know what a revision is and what item the change affects.
+p. Needs description.
 
 h2. For Developers
 
