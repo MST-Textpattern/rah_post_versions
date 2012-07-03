@@ -109,18 +109,6 @@ class rah_post_versions {
 		if(self::$version === $current)
 			return;
 		
-		/*
-			Stores all changed grouped items
-			
-			* id: The row primary key
-			* event: The event the post was recorded form.
-			* step: Same, but the step.
-			* title: The identifier (Article title, form name) that is used to identify the changeset record.
-			* grid: The ident used to group the commit to sets (form name, article id etc).
-			* modified: Time of the last change to the changeset.
-			* changes: The number of changes the set holds.
-		*/
-		
 		safe_query(
 			'CREATE TABLE IF NOT EXISTS '.safe_pfx('rah_post_versions_sets')." (
 				`id` INT(11) NOT NULL auto_increment,
@@ -134,19 +122,6 @@ class rah_post_versions {
 				KEY `event_grid_idx` (`event`(24),`grid`(32))
 			) PACK_KEYS=1 AUTO_INCREMENT=1 CHARSET=utf8"
 		);
-		
-		/*
-			Stores the changes
-			
-			* id: The row primary key
-			* event: The event the post was recorded form.
-			* step: Same, but the step.
-			* title: The identifier (Article title, form name) that is used to identify the changeset record.
-			* grid: The ident used to group the commit to sets (form name, article id etc).
-			* author: The user posted the post.
-			* posted: Time of the post.
-			* data: All the post data
-		*/
 		
 		safe_query(
 			'CREATE TABLE IF NOT EXISTS '.safe_pfx('rah_post_versions')." (
@@ -170,12 +145,7 @@ class rah_post_versions {
 			'repository_path' => array('text_input', ''),
 		);
 		
-		safe_delete('txp_prefs', 'name in('.implode(',', quote_list(array(
-			'rah_post_versions_exclude',
-			'rah_post_versions_events',
-			'rah_post_versions_hidden',
-			'rah_post_versions_ident',
-		))).')');
+		safe_delete('txp_prefs', "name in('rah_post_versions_exclude', 'rah_post_versions_events', 'rah_post_versions_hidden', 'rah_post_versions_ident')");
 		
 		$position = 250;
 		
