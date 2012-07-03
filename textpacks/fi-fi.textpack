@@ -23,6 +23,7 @@ rah_post_versions_unknown_selection => Tuntematon valinta.
 rah_post_versions_select_two_items => Virheellinen valinta. Valitse kaksi versiota vertailtavaksi.
 rah_post_versions_revisions_match => Versiot ovat yhtenevät. Ei näytettäviä eroja.
 rah_post_versions_authors => Sivuutetut käyttäjät
+rah_post_versions_gzip => Pakkaa säilön tiedostot?
 rah_post_versions_repository_path => Tiedostopolku säilytyshakemistoon
 rah_post_versions_go_back => Takaisin
 rah_post_versions_repost_this => Palauta versio
