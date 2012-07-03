@@ -17,13 +17,14 @@
 		rah_post_versions::install();
 		rah_post_versions::push();
 		add_privs('rah_post_versions', '1,2');
-		add_privs('rah_post_versions_delete', '1');
+		add_privs('rah_post_versions_delete_item', '1');
+		add_privs('rah_post_versions_delete_revision', '1');
+		add_privs('rah_post_versions_diff', '1,2');
 		add_privs('rah_post_versions_preferences', '1');
 		add_privs('plugin_prefs.rah_post_versions', '1,2');
 		register_tab('extensions','rah_post_versions', gTxt('rah_post_versions'));
-		register_callback(array('rah_post_versions', 'deliver'), 'rah_post_versions');
+		register_callback(array('rah_post_versions', 'panes'), 'rah_post_versions');
 		register_callback(array('rah_post_versions', 'head'), 'admin_side', 'head_end');
-		register_callback(array('rah_post_versions', 'messager'), 'admin_side', 'pagetop_end');
 		register_callback(array('rah_post_versions', 'install'), 'plugin_lifecycle.rah_post_versions');
 		register_callback(array('rah_post_versions', 'prefs'), 'plugin_prefs.rah_post_versions');
 	}
@@ -34,25 +35,52 @@
 
 class rah_post_versions {
 
+	/**
+	 * @var string Version number
+	 */
+	
 	static public $version = '1.0';
-	protected $event = 'rah_post_versions';
-	protected $pfx = 'rah_post_versions';
-	protected $prefs_group = 'rah_postver';
-	protected $list_filters = array();
-	protected $ui;
-	protected $diff;
-	protected $sort;
+
+	/**
+	 * @var obj Stores instances
+	 */
+
+	static public $instance = NULL;
+	
+	/**
+	 * @var array List of event labels
+	 */
+	
 	protected $events = array();
+	
+	/**
+	 * @var string Path to repository
+	 */
+	
 	protected $static_dir = false;
+	
+	/**
+	 * @var string Static heading
+	 */
+	
 	protected $static_header = '';
+	
+	/**
+	 * @var bool Write status
+	 */
+	
 	protected $nowrite = false;
+	
+	/**
+	 * @var bool Compress or not
+	 */
+	
 	protected $compress = false;
 
 	/**
 	 * Installer
 	 * @param string $event
 	 * @param string $step
-	 * @return nothing
 	 */
 
 	static public function install($event='', $step='') {
@@ -76,9 +104,9 @@ class rah_post_versions {
 		}
 		
 		$current = isset($prefs['rah_post_versions_version']) ? 
-			$prefs['rah_post_versions_version'] : 'base';
+			(string) $prefs['rah_post_versions_version'] : 'base';
 			
-		if(self::$version == $current)
+		if(self::$version === $current)
 			return;
 		
 		/*
@@ -136,113 +164,37 @@ class rah_post_versions {
 			) PACK_KEYS=1 AUTO_INCREMENT=1 CHARSET=utf8"
 		);
 		
+		$options = array(
+			'gzip' => array('yesnoradio', 0),
+			'authors' => array('text_input', ''),
+			'repository_path' => array('text_input', ''),
+		);
 		
-		$ini =
-			array(
-				'exclude' => '',
-				'authors' => '',
-				'events' => 'article:edit, article:create, article:publish, article:save, page:page_create, page:page_edit, page:page_save, form:form_create, form:form_edit, form:form_save, prefs:prefs_save, prefs:advanced_prefs_save, category:cat_article_create, category:cat_image_create, category:cat_file_create, category:cat_link_create, category:cat_article_save, category:cat_image_save, category:cat_file_save, category:cat_link_save, section:section_create, section:section_save, link:link_post, link:link_save, discuss:discuss_save, image:image_save, file:file_save, css:css_save, rah_external_output:save, rah_autogrowing_textarea:save',
-				'hidden' => 'event,step,save',
-				'ident' => 
-					'switch($event) {'.n.
-					'	case "article":'.n.
-					'		$grid = rah_post_versions_id();'.n.
-					'		$title = gps("Title");'.n.
-					'	break;'.n.
-					'	case "category":'.n.
-					'		$grid = rah_post_versions_id("id");'.n.
-					'		$title = gps("title");'.n.
-					'	break;'.n.
-					'	case "link":'.n.
-					'		$grid = rah_post_versions_id("id");'.n.
-					'		$title = gps("linkname");'.n.
-					'	break;'.n.
-					'	case "prefs":'.n.
-					'		$grid = $title = ($step == "advanced_prefs_save") ? "Advanced prefs" : "Preferences";'.n.
-					'	break;'.n.
-					'	case "discuss":'.n.
-					'		$grid = gps("discussid");'.n.
-					'		$title = gps("name");'.n.
-					'	break;'.n.
-					'	case "section":'.n.
-					'		$grid = gps("name");'.n.
-					'		$title = (gps("title")) ? gps("title") : gps("name");'.n.
-					'	break;'.n.
-					'	case "image":'.n.
-					'		$grid = rah_post_versions_id("id");'.n.
-					'		$title = (gps("name")) ? gps("name") : $grid;'.n.
-					'	break;'.n.
-					'	case "file":'.n.
-					'		$grid = gps("id");'.n.
-					'		$title = gps("filename");'.n.
-					'	break;'.n.
-					'	default:'.n.
-					'		$grid = $title = gps("name");'.n.
-					'}',
-			);
-		
-		/*
-			Migrate preferences from <= 0.9 to >= 1.0
-		*/
-		
-		if($current == 'base') {
-			
-			@$rs = 
-				safe_rows(
-					'name, value',
-					'rah_post_versions_prefs',
-					'1=1'
-				);
-			
-			if(!empty($rs) && is_array($rs)) {
-				
-				foreach($rs as $a) {
-					
-					if(!isset($ini[$a['name']]))
-						continue;
-					
-					$ini[$a['name']] = $a['value'];
-				}
-
-				@safe_query(
-					'DROP TABLE IF EXISTS '.safe_pfx('rah_post_versions_prefs')
-				);
-			}
-		}
+		safe_delete('txp_prefs', 'name in('.implode(',', quote_list(array(
+			'rah_post_versions_exclude',
+			'rah_post_versions_events',
+			'rah_post_versions_hidden',
+			'rah_post_versions_ident',
+		))).')');
 		
 		$position = 250;
 		
-		/*
-			Add preference strings
-		*/
-		
-		foreach($ini as $name => $val) {
-
-			$n = 'rah_post_versions_' . $name;
+		foreach($options as $name => $value) {
+			$name = 'rah_post_versions_' . $name;
 			
-			if(!isset($prefs[$n])) {
-
-				switch($name) {
-					case 'events':
-					case 'ident':
-						$html = 'rah_post_versions_textarea';
-						break;
-					default:
-						$html = 'text_input';
-				}
-
+			if(!isset($prefs[$name])) {
 				safe_insert(
 					'txp_prefs',
 					"prefs_id=1,
-					name='".doSlash($n)."',
-					val='".doSlash($val)."',
+					name='".doSlash($name)."',
+					val='".doSlash($value[1])."',
 					type=1,
 					event='rah_postver',
-					html='$html',
+					html='".doSlash($value[2])."',
 					position=".$position
 				);
 				
-				$prefs[$n] = $val;
+				$prefs[$name] = $val;
 			}
 			
 			$position++;
@@ -274,156 +226,8 @@ class rah_post_versions {
 		if($event != 'rah_post_versions')
 			return;
 
-		$msg = escape_js(gTxt('are_you_sure'));
-		$pfx = 'rah_post_versions';
-
 		echo <<<EOF
-			<script type="text/javascript">
-				<!--
-				$(document).ready(function(){
-					
-					var pfx = '{$pfx}';
-					var pane = $('#'+pfx+'_container');
-					var l10n = {
-						'are_you_sure' : '{$msg}'
-					};
-					
-					/**
-						Multi-edit function, auto-hiden dropdown
-					*/
-				
-					(function() {
-						
-						var steps = $('#'+pfx+'_step');
-					
-						if(!steps.length)
-							return;
-						
-						steps.children('input[type=submit]').hide();
-						
-						pane.find('th.rah_ui_selectall').html(
-							'<input type="checkbox" name="selectall" value="1" />'
-						);
-						
-						if(pane.children('input[type=checkbox]:checked').val() == null)
-							steps.hide();
-						
-						/*
-							Reset the value
-						*/
-	
-						steps.children('select[name="step"]').val('');
-						
-						/*
-							Check all
-						*/
-	
-						pane.find('input[name="selectall"]').live('click',
-							function() {
-								var tr = pane.find('table tbody input[type=checkbox]');
-								
-								if($(this).is(':checked'))
-									tr.attr('checked', true);
-								else
-									tr.removeAttr('checked');
-							}
-						);
-						
-						/*
-							Every time something is checked, check if
-							the dropdown should be shown
-						*/
-						
-						pane.find('table input[type=checkbox], td').live('click',
-							function(){
-								steps.children('select[name="step"]').val('');
-								
-								if(pane.find('tbody input[type=checkbox]:checked').val() != null)
-									steps.slideDown();
-								else
-									steps.slideUp();
-							}
-						);
-						
-						/*
-							Uncheck the check all box if an item is unchecked
-						*/
-						
-						pane.find('tbody input[type=checkbox]').live('click',
-							function() {
-								pane.find('input[name="selectall"]').removeAttr('checked');
-							}
-						);
-	
-						/*
-							If value is changed, send the form
-						*/
-	
-						steps.change(
-							function(){
-								steps.parents('form').submit();
-							}
-						);
-	
-						/*
-							Verify if the sent is allowed
-						*/
-						
-						
-						$('form').submit(
-							function() {
-								if(!verify(l10n['are_you_sure'])) {
-									steps.children('select[name="step"]').val('');
-									return false;
-								}
-							}
-						);
-					})();
-					
-					/**
-						Verify form submits
-					*/
-					
-					(function() {
-						$('form.'+pfx+'_verify').submit(
-							function() {
-								return verify(l10n['are_you_sure']);
-							}
-						);
-					})();
-				});
-				//-->
-			</script>
 			<style type="text/css">
-				#{$pfx}_container .rah_ui_list_actions {
-					margin: 10px 0;
-					overflow: hidden;
-				}
-				#{$pfx}_container .rah_ui_view_limit,
-				#{$pfx}_container .rah_ui_pages, 
-				#{$pfx}_container .rah_ui_step {
-					margin: 0;
-					padding: 0;
-					display: inline;
-					float: left;
-					width: 300px;
-				}
-				#{$pfx}_container .rah_ui_pages {
-					text-align: center;
-					margin: 0 0 0 25px;
-				}
-				#{$pfx}_container .rah_ui_active {
-					color: #000;
-					text-decoration: underline;
-				}
-				#{$pfx}_container .rah_ui_step {
-					float: right;
-					text-align: right;
-				}
-				#{$pfx}_actions {
-					border-bottom: 1px solid #ccc;
-					padding: 0 0 5px 0;
-				}
 				.rah_ui_add,
 				.rah_ui_del {
 					-moz-border-radius: 3px;
@@ -466,45 +270,73 @@ EOF;
 		
 		global $txp_user, $event, $step, $prefs;
 		
+		$events = 'article:edit, article:create, article:publish, article:save, page:page_create, page:page_edit, page:page_save, form:form_create, form:form_edit, form:form_save, prefs:prefs_save, prefs:advanced_prefs_save, category:cat_article_create, category:cat_image_create, category:cat_file_create, category:cat_link_create, category:cat_article_save, category:cat_image_save, category:cat_file_save, category:cat_link_save, section:section_create, section:section_save, link:link_post, link:link_save, discuss:discuss_save, image:image_save, file:file_save, css:css_save';
+		
 		if($callback === NULL) {
-
-			foreach(explode(',',$prefs['rah_post_versions_events']) as $e)
-				if(($e = explode(':',$e)) && count($e) == 2)
-					register_callback(array('rah_post_versions', 'push'),trim($e[0]),trim($e[1]),0);
-
+			
+			foreach(explode(',', $events) as $e) {
+				$e = do_list($e, ':');
+				register_callback(array('rah_post_versions', 'push'), $e[0], $e[1], 0);
+			}
+			
 			return;
 		}
-
-		/*
-			Check if the step has post
-		*/
 		
 		if(!isset($_POST) || !is_array($_POST) || empty($_POST))
 			return;
 		
-		/*
-			Evaluates ident code
-		*/
+		$grid = ps('id') ? ps('id') : mysql_insert_id();
 		
-		eval($prefs['rah_post_versions_ident']);
+		switch($event) {
+			
+			case 'article':
+				$grid = ps('ID') ? ps('ID') : mysql_insert_id();
+				$title = ps('Title');
+			break;
+			
+			case 'category':
+				$title = gps("title");
+			break;
+			
+			case 'link':
+				$title = ps("linkname");
+			break;
+			
+			case 'prefs':
+				$grid = $title = ($step == 'advanced_prefs_save') ? 'Advanced prefs' : 'Preferences';
+			break;
+			
+			case 'discuss':
+				$grid = ps('discussid');
+				$title = ps("name");
+			break;
+			
+			case 'section':
+				$grid = ps('name');
+				$title = ps('title') ? ps('title') : ps('name');
+			break;
+			
+			case 'image':
+				$title = ps('name') ? ps('name') : $grid;
+			break;
+			
+			case 'file':
+				$grid = gps('id');
+				$title = gps('filename');
+			break;
+			
+			default:
+				$grid = $title = gps("name");
+		}
 		
-		/*
-			Check if the ident code returned the data we want
-		*/
-		
-		if(isset($kill) || !isset($grid) || !isset($title))
+		if(!$grid || empty($title))
 			return;
 		
-		$f = new rah_post_versions();
-		
-		/*
-			Build data array
-		*/
-		
-		foreach($_POST as $key => $value)
+		foreach($_POST as $key => $value) {
 			$data[$key] = ps($key);
+		}
 		
-		$f->create_revision(
+		rah_post_versions::get()->create_revision(
 			array(
 				'grid' => $grid,
 				'title' => $title,
@@ -517,96 +349,54 @@ EOF;
 	}
 
 	/**
-	 * Shows a message after reverting
-	 */
-
-	static public function messager() {
-		
-		if(!ps('rah_post_versions_repost_item') || ps('_txp_token') != form_token())
-			return;
-		
-		extract(
-			doArray(
-				psa(array(
-					'rah_post_versions_repost_item',
-					'rah_post_versions_repost_id'
-				)), 'htmlspecialchars'
-			)
-		);
-		
-		echo 
-			'<div id="rah_post_versions_messager" style="text-align: center;">'.
-				gTxt(
-					'rah_post_versions_reposted_form_id',
-					array(
-						'{id}' => 'r'.$rah_post_versions_repost_id,
-						'{go_back}' => '<a href="?event=rah_post_versions&amp;step=changes&amp;item='.$rah_post_versions_repost_item.'">'.gTxt('rah_post_versions_go_back_to_listing').'</a>'
-					),
-					false
-				).
-			'</div>';
-		
-		callback_event('rah_post_versions_tasks', 'messager_called');
-	}
-
-	/**
-	 * Deliver panels
-	 */
-
-	static public function deliver() {
-		$uix = new rah_post_versions_panes();
-		$uix->panes();
-	}
-
-	/**
-	 * Initialize required
+	 * Initialize required objects
 	 */
 
 	public function __construct() {
 		$this->go_static();
 		$this->compression();
 	}
-
+	
 	/**
-	 * Passes activity message to UIX
-	 * @param string $msg
+	 * Gets an instance
 	 * @return obj
 	 */
-
-	protected function msg($msg) {
-		$this->ui->msg($msg);
-		return $this;
+	
+	static public function get() {
+		
+		if(self::$instance === NULL) {
+			self::$instance = new rah_post_versions();
+		}
+		
+		return self::$instance;
 	}
 
 	/**
 	 * Shows requested admin-side page
 	 */
 
-	public function panes() {
-		require_privs($this->event);
+	static public function panes() {
+		require_privs('rah_post_versions');
 
 		global $step;
 
 		$steps = 
 			array(
-				'items' => false,
+				'browser' => false,
 				'changes' => false,
-				'view' => false,
 				'diff' => false,
-				'delete_item' => true,
-				'delete_revision' => true
+				'multi_edit' => true,
 			);
 
-		if(!$step || !bouncer($step, $steps))
-			$step = 'items';
-		
-		$this->ui->title($this->event);
-		
-		if($this->nowrite == true) {
-			$this->ui->add('<p id="warning">'.gTxt($this->pfx.'_repository_data_missing').'</p>');
+		if(!$step || !bouncer($step, $steps)) {
+			$step = 'browser';
 		}
 		
-		$this->$step();
+		if(self::get()->nowrite == true) {
+			echo '<p id="warning">'.gTxt('rah_post_versions_repository_data_missing').'</p>';
+		}
+		
+		self::get()->$step();
 	}
 
 	/**
@@ -633,11 +423,8 @@ EOF;
 	 */
 
 	protected function compression() {
-		if(
-			defined('rah_post_versions_compress') &&
-			function_exists('gzencode') &&
-			function_exists('gzinflate')
-		) {
+		
+		if(defined('rah_post_versions_compress') && function_exists('gzencode') && function_exists('gzinflate')) {
 			$this->compress = true;
 		}
 		
@@ -652,12 +439,7 @@ EOF;
 
 	public function get_revision($where) {
 		
-		$r =
-			safe_row(
-				'*',
-				$this->pfx,
-				$where . ' LIMIT 0, 1'
-			);
+		$r = safe_row('*', 'rah_post_versions', $where);
 		
 		if(!$r) {
 			return array();
@@ -707,30 +489,33 @@ EOF;
 		global $prefs;
 		
 		if(
-			$this->nowrite == true ||
-			empty($data['data']) ||
+			$this->nowrite == true || empty($data['data']) ||
 			count($data) != 6 ||
 			!is_array($data['data']) ||
 			!isset($data['author']) ||
-			in_array($data['author'], do_list($prefs[$this->pfx.'_authors']))
+			in_array($data['author'], do_list($prefs['rah_post_versions_authors']))
 		)
 			return false;
-		
+			
+		/*
 		$exclude = 
 			array_merge(
-				do_list($prefs[$this->pfx.'_exclude']),
+				do_list($prefs['rah_post_versions_exclude']),
 				array(
-					$this->pfx.'_repost_item',
-					$this->pfx.'_repost_id',
+					'rah_post_versions_repost_item',
+					'rah_post_versions_repost_id',
 					'_txp_token'
 				)
 			);
 		
-		foreach($exclude as $name)
+		foreach($exclude as $name) {
 			unset($data['data'][$name]);
+		}
 		
-		if(empty($data['data']))
+		if(empty($data['data'])) {
 			return false;
+		}
+		*/
 		
 		/*
 			Revision data is required
@@ -762,7 +547,7 @@ EOF;
 		$r = 
 			safe_row(
 				'id',
-				$this->pfx.'_sets',
+				'rah_post_versions_sets',
 				$sql['event'].' and '.$sql['grid'].' LIMIT 0, 1'
 			);
 		
@@ -774,7 +559,7 @@ EOF;
 			
 			if(
 				safe_insert(
-					$this->pfx.'_sets',
+					'rah_post_versions_sets',
 					'modified=now(),changes=1,'.
 					$sql['title'].','.
 					$sql['event'].','.
@@ -802,7 +587,7 @@ EOF;
 			
 			if(
 				safe_update(
-					$this->pfx.'_sets',
+					'rah_post_versions_sets',
 					'modified=now(), changes=changes+1,'.$sql['title'],
 					"id='".doSlash($data['setid'])."'"
 				) == false
@@ -829,7 +614,7 @@ EOF;
 		
 		if(
 			safe_insert(
-				$this->pfx,
+				'rah_post_versions',
 				implode(',', $sql)
 			) == false
 		)
@@ -865,12 +650,7 @@ EOF;
 			return;
 		
 		$this->static_header = 
-			'<'.
-				'?php'.n.
-					' if(!defined("rah_post_versions_static_dir"))'.n.
-					'  die("rah_post_versions_static_dir undefined"); '.n.
-				'?'.
-			'>';
+			'<?php if(!defined("rah_post_versions_static_dir")) die("rah_post_versions_static_dir undefined"); ?>';
 		
 		if(
 			defined('rah_post_versions_static_dir') &&
@@ -881,15 +661,15 @@ EOF;
 		)
 			$this->static_dir = rtrim(rah_post_versions_static_dir, '/\\');
 
-		if(!$this->static_dir && isset($prefs[$this->pfx.'_static'])) {
+		if(!$this->static_dir && isset($prefs['rah_post_versions_static'])) {
 			$this->nowrite = true;
 			return;
 		}
 
-		if(!$this->static_dir || isset($prefs[$this->pfx.'_static']))
+		if(!$this->static_dir || isset($prefs['rah_post_versions_static']))
 			return;
 		
-		$r = getThings('describe '.safe_pfx($this->pfx));
+		$r = getThings('describe '.safe_pfx('rah_post_versions'));
 		
 		if(!$r || !is_array($r) || !in_array('data', $r))
 			return;
@@ -897,7 +677,7 @@ EOF;
 		$rs =
 			safe_rows(
 				'data, setid, id',
-				$this->pfx,
+				'rah_post_versions',
 				'1=1'
 			);
 		
@@ -919,341 +699,437 @@ EOF;
 		
 		if(
 			safe_alter(
-				$this->pfx,
+				'rah_post_versions',
 				'DROP data'
 			) === false
 		)
 			return false;
 		
-		set_pref($this->pfx.'_static', '1', $this->prefs_group, 2, '', 0);
-		$prefs[$this->pfx.'_static'] = '1';
+		set_pref('rah_post_versions_static', '1', 'rah_postver', 2, '', 0);
+		$prefs['rah_post_versions_static'] = '1';
 
 		return true;
-	}
-}
-
-/**
- * Admin-side panels.
- */
-
-class rah_post_versions_panes extends rah_post_versions {
-
-	/**
-	 * Initialize required objects
-	 */
-
-	public function __construct() {
-		$this->go_static();
-		$this->compression();
-		$this->sort = new rah_post_versions_sort();
-		$this->ui = new rah_post_versions_widgets($this->sort);
-		$this->diff = new rah_post_versions_diff();
 	}
 
 	/**
 	 * Lists all items
 	 */
 
-	protected function items() {
+	public function browser($message='') {
 		
-		$q[] = '1=1';
+		global $event;
 		
-		$filter_event = gps('filter_event');
+		extract(gpsa(array(
+			'filter_event',
+			'sort',
+			'dir',
+		)));
 		
-		if($filter_event)
-			$q[] = "event='".doSlash($filter_event)."'";
+		$columns = array('id', 'event', 'title', 'modified', 'changes');
+		
+		if($dir !== 'desc' && $dir !== 'asc') {
+			$dir = get_pref($event.'_browser_dir', 'desc');
+		}
+		
+		if(!in_array((string) $sort, $columns)) {
+			$sort = get_pref($event.'_browser_column', 'modified');
+		}
+		
+		set_pref($event.'_browser_column', $sort, $event, 2, '', 0, PREF_PRIVATE);
+		set_pref($event.'_browser_dir', $dir, $event, 2, '', 0, PREF_PRIVATE);
+		
+		$sql = array('1=1');
+		
+		if($filter_event) {
+			$sql[] = "event='".doSlash($filter_event)."'";
+		}
 		
 		$total = 
 			safe_count(
-				$this->pfx.'_sets',
-				implode(' and ',$q)
+				'rah_post_versions_sets',
+				implode(' and ', $sql)
 			);
 		
-		$this->sort->
-			add('id')->
-			add('event')->
-			add('title')->
-			add('modified')->
-			add('changes')->
-			col('modified')->
-			dir('desc')->
-			view('items')->
-			total($total)->
-			limit(20)->
-			page(gps('page'))->
-			set();
+		$limit = 15;
 		
-		if($filter_event)
-			$this->ui->label($this->pfx.'_main')->
-				url('?event='.$this->event);
+		list($page, $offset, $num_pages) = pager($total, $limit, gps('page'));
 		
-		if(has_privs('prefs') && has_privs($this->pfx.'_preferences'))
-			$this->ui->label($this->pfx.'_preferences')->
-				url('?event=prefs&amp;step=advanced_prefs#prefs-'.$this->pfx.'_exclude');
+		$show_selects = has_privs('rah_post_versions_delete_item');
 		
-		$this->ui->nav();
+		if($show_selects) {
+			$column[] = hCell(fInput('checkbox', 'select_all', 1, '', '', '', '', '', 'select_all'), '', ' title="'.gTxt('toggle_all_selected').'" class="multi-edit"');
+		}
 		
-		$this->ui->add(
-			n.'	<form method="post" action="index.php">'.n.
-			
-			eInput($this->event).n.
-			tInput().n.
-			
-			'		<table class="txp-list">'.n
-		);
+		foreach($columns as $name) {
+			$column[] = column_head($event.'_'.$name, $name, $event, true, $name === $sort && $dir === 'asc' ? 'desc' : 'asc', '', '', ($name === $sort ? $dir : ''));
+		}
 		
-		$show_selects = has_privs($this->pfx.'_delete');
-
-		$this->ui->
-			label($this->pfx.'_id')->th('id')->
-			label($this->pfx.'_event')->th('event')->
-			label($this->pfx.'_title')->th('title')->
-			label($this->pfx.'_modified')->th('modified')->
-			label($this->pfx.'_changes')->th('changes');
-		
-		if($show_selects)
-			$this->ui->label('')->attr('class', 'rah_ui_selectall')->th('');
-		
-		$this->ui->thead();
+		$out[] =
+			'<form method="post" action="index.php" class="multi_edit_form">'.
+			eInput($event).
+			tInput().
+			'<table class="txp-list">'.
+			'<thead>'.tr(implode('', $column)).'</thead>'.
+			'<tbody>';
 		
 		$rs = 
 			safe_rows(
-				'id,event,step,grid,title,modified,changes',
-				$this->pfx.'_sets',
-				implode(' and ', $q) . 
-				' ORDER BY '.
-					$this->sort->col().' '.
-					$this->sort->dir().
-				' LIMIT ' .
-					$this->sort->offset().', '.
-					$this->sort->limit()
+				'id, event, step, grid, title, modified, changes',
+				'rah_post_versions_sets',
+				implode(' and ', $sql) . " order by {$sort} {$dir} limit {$offset}, {$limit}"
 			);
 		
-		if($rs){
-			
-			$events = $this->pop_events();
+		$events = $this->pop_events();
 		
-			foreach($rs as $a) {
+		foreach($rs as $a) {
 				
-				if(!$a['title'])
-					$a['title'] = gTxt('untitled');
-				
-				if(isset($events[$a['event']]))
-					$a['event'] = $events[$a['event']];
-				
-				$url = '?event='.$this->event.'&amp;step=changes&amp;item='.$a['id'];
-				
-				$this->ui->add(
-					'				<tr>'.n.
-					'					<td>'.$a['id'].'</td>'.n.
-					'					<td>'.htmlspecialchars($a['event']).'</td>'.n.
-					'					<td><a href="'.$url.'">'.htmlspecialchars($a['title']).'</a></td>'.n.
-					'					<td>'.safe_strftime(gTxt($this->pfx.'_date_format'),strtotime($a['modified'])).'</td>'.n.
-					'					<td><a href="'.$url.'">'.$a['changes'].'</a></td>'.n.
-					($show_selects ?
-						'					<td><input type="checkbox" name="selected[]" value="'.$a['id'].'" /></td>'.n : ''
-					).
-					'				</tr>'.n
-				);
+			if(trim($a['title']) === '') {
+				$a['title'] = gTxt('untitled');
 			}
-
-		} else 
-			$this->ui->add(
-				'				<tr>'.n.
-				'					<td colspan="'.($show_selects? 6 : 5).'">'.gTxt($this->pfx.'_no_changes').'</td>'.n.
-				'				</tr>'.n
-			);
+				
+			if(isset($events[$a['event']])) {
+				$a['event'] = $events[$a['event']];
+			}
+			
+			$column = array();
+			
+			if($show_selects) {
+				$column[] = td(fInput('checkbox', 'selected[]', $a['id']), '', 'multi-edit');
+			}
+			
+			$column[] = td($a['id']);
+			$column[] = td(txpspecialchars($a['event']));
+			$column[] = td('<a href="?event='.$event.'&amp;step=changes&amp;item='.$a['id'].'">'.txpspecialchars($a['title']).'</a>');
+			$column[] = td(safe_strftime(gTxt('rah_post_versions_date_format'), strtotime($a['modified'])));
+			$column[] = td($a['changes']);
+			
+			$out[] = tr(implode('', $column));
+		}
 		
-		$this->ui->url('?event='.$this->event);
-		$this->ui->add(
-			'			</tbody>'.n.
-			'		</table>'.n.
-			'		<div id="'.$this->pfx.'_list_actions" class="rah_ui_list_actions">'.n
-		)->
-		view_limit(array(10,20,100))->pages();
-
-		$this->ui->add(
+		if(!$rs) {
+			$out[] = tr('<td colspan="'.count($column).'">'.gTxt('rah_post_versions_no_changes').'</td>');
+		}
+		
+		$out[] = 
+			'</tbody>'.n.
+			'</table>'.n;
 			
-			($show_selects ?
-				'		<div id="'.$this->pfx.'_step" class="rah_ui_step">'.n.
-				'			<select name="step">'.n.
-				'				<option value="">'.gTxt($this->pfx.'_with_selected').'</option>'.n.
-				'				<option value="delete_item">'.gTxt($this->pfx.'_delete').'</option>'.n.
-				'			</select>'.n.
-				'			<input type="submit" value="'.gTxt('go').'" />'.n.
-				'		</div>'.n : ''
+		if($show_selects) {
+			$out[] = multi_edit(array('delete_item' => gTxt('delete')), $event, 'multi_edit');
+		}
+		
+		$out[] = $this->pages('browser', $total, $limit);
+		$this->pane($out, $message);
+	}
+
+	/**
+	 * Echoes the panels and header
+	 * @param string $content Pane's HTML markup.
+	 * @param string $message The activity message.
+	 */
+
+	private function pane($content, $message='') {
+		
+		global $event;
+		
+		pagetop(gTxt('rah_post_versions'), $message ? $message : '');
+		
+		if(is_array($content)) {
+			$content = implode(n, $content);
+		}
+		
+		echo 
+			n.
+			
+			'<div id="rah_post_versions_container" class="txp-container">'.n.
+			
+			'	<p class="nav-tertiary">'.
+			
+			(has_privs('rah_post_versions_preferences') ? 
+				'<a class="navlink" href="?event=prefs&amp;step=advanced_prefs#prefs-rah_post_versions_gzip">'.
+					gTxt('rah_backup_preferences').
+				'</a>' : ''
 			).
-			
-			'		</div>'.n.
-			
-			'	</form>'.n
-		);
-
-		$this->ui->pane();
+					
+			'</p>'.n.
+			$content.n.
+			'</div>'.n;
 	}
 
 	/**
 	 * Lists changes committed to an item
 	 */
 
-	protected function changes() {
+	protected function changes($message='') {
+	
+		global $event;
 		
-		$id = gps('item');
+		extract(gpsa(array(
+			'item',
+			'sort',
+			'dir',
+		)));
 		
 		if(
 			!safe_row(
 				'id',
-				$this->pfx.'_sets',
-				"id='".doSlash($id)."' LIMIT 0, 1"
+				'rah_post_versions_sets',
+				"id='".doSlash($item)."' LIMIT 0, 1"
 			)
 		) {
-			$this->msg('unknown_selection')->items();
+			$this->browser(array(gTxt('rah_post_versions_unknown_selection'), E_WARNING));
 			return;
 		}
 		
+		$columns = array('id', 'title', 'posted', 'step', 'author');
+		
+		if($dir !== 'desc' && $dir !== 'asc') {
+			$dir = get_pref($event.'_changes_dir', 'desc');
+		}
+		
+		if(!$sort) {
+			$sort = get_pref($event.'_changes_column', 'posted');
+		}
+		
+		if(!in_array((string) $sort, $columns)) {
+			$sort = 'posted';
+		}
+		
+		set_pref($event.'_changes_column', $sort, $event, 2, '', 0, PREF_PRIVATE);
+		set_pref($event.'_changes_dir', $dir, $event, 2, '', 0, PREF_PRIVATE);
+		
 		$total = 
 			safe_count(
-				$this->pfx,
-				"setid='".doSlash($id)."'"
+				'rah_post_versions',
+				"setid='".doSlash($item)."'"
 			);
 		
-		$this->sort->
-			add('id')->
-			add('title')->
-			add('posted')->
-			add('step')->
-			add('author')->
-			col('posted')->
-			dir('desc')->
-			limit(20)->
-			total($total)->
-			page(gps('page'))->
-			view('changes')->
-			set();
+		$limit = 15;
 		
-		$this->ui->
-				label($this->pfx.'_main')->
-				url('?event='.$this->event)->
-				nav();
+		list($page, $offset, $num_pages) = pager($total, $limit, gps('page'));
 		
-		$this->ui->add(
+		$column[] = hCell(fInput('checkbox', 'select_all', 1, '', '', '', '', '', 'select_all'), '', ' title="'.gTxt('toggle_all_selected').'" class="multi-edit"');
 		
-			'	<form method="post" action="index.php">'.n.
-			
-			eInput($this->event).n.
-			hInput('item', $id).n.
+		foreach($columns as $name) {
+			$column[] = hCell('<a href="?event='.$event.a.'step=changes'.a.'item='.urlencode(gps('item')).a.'page='.$page.a.'sort='.$name.a.'dir='.($name === $sort && $dir === 'asc' ? 'desc' : 'asc').'">'.gTxt($event.'_'.$name).'</a>', '',  ($name === $sort ? ' class="'.$dir.'"' : ''));
+		}
+		
+		$out[] = 
+			'<form method="post" action="index.php" class="multi_edit_form">'.n.
+			eInput($event).n.
+			hInput('item', $item).n.
 			tInput().n.
-			
-			'		<table class="txp-list">'.n
-		);
-		
-		$this->ui->
-			label($this->pfx.'_id')->th('id')->
-			label($this->pfx.'_title')->th('title')->
-			label($this->pfx.'_posted')->th('posted')->
-			label($this->pfx.'_step')->th('step')->
-			label($this->pfx.'_author')->th('author')->
-			label('')->attr('class', 'rah_ui_selectall')->th('')->
-			thead('&amp;step=changes&amp;item='.$id);
+			'<table class="txp-list">'.n.
+			'<thead>'.tr(implode('', $column)).'</thead>'.
+			'<tbody>'.n;
 		
 		$rs = 
 			safe_rows(
-				'id,title,posted,author,step',
-				$this->pfx,
-				"setid='".doSlash($id)."'".
-				' ORDER BY ' . 
-					$this->sort->col().' '.
-					$this->sort->dir().' '.
-				' LIMIT ' .
-					$this->sort->offset().', '.
-					$this->sort->limit()
+				'id, title, posted, author, step',
+				'rah_post_versions',
+				"setid='".doSlash($item)."' ORDER BY {$sort} {$dir} LIMIT {$offset}, {$limit}"
 			);
 		
-		if($rs){
-		
-			foreach($rs as $a) {
-			
-				$url = '?event='.$this->event.'&amp;step=view&amp;item='.$id.'&amp;r='.$a['id'];
-			
-				$this->ui->add(  
-					
-					'				<tr>'.n.
-					'					<td>'.$a['id'].'</td>'.n.
-					'					<td><a href="'.$url.'">'.htmlspecialchars($a['title']).'</a></td>'.n.
-					'					<td>'.safe_strftime(gTxt($this->pfx.'_date_format'),strtotime($a['posted'])).'</td>'.n.
-					'					<td>'.htmlspecialchars($a['step']).'</td>'.n.
-					'					<td>'.htmlspecialchars(get_author_name($a['author'])).'</td>'.n.
-					'					<td><input type="checkbox" name="selected[]" value="'.$a['id'].'" /></td>'.n.
-					'				</tr>'.n
+		foreach($rs as $a) {
+			$out[] = 
+				tr(
+					td(fInput('checkbox', 'selected[]', $a['id']), '', 'multi-edit').
+					td($a['id']).
+					td('<a href="?event='.$event.'&amp;step=diff&amp;item='.$item.'&amp;r='.$a['id'].'">'.txpspecialchars($a['title']).'</a>').
+					td(safe_strftime(gTxt('rah_post_versions_date_format'), strtotime($a['posted']))).
+					td(txpspecialchars($a['step'])).
+					td(txpspecialchars(get_author_name($a['author'])))
 				);
+		}
+		
+		if(!$rs) {
+			$out[] =
+				'<tr>'.n.
+				'	<td colspan="6">'.gTxt('rah_post_versions_no_changes').'</td>'.n.
+				'</tr>'.n;
+		}
+		
+		$out[] =
+			'</tbody>'.n.
+			'</table>'.n.
+			multi_edit(array('diff' => gTxt('rah_post_versions_diff'), 'delete_item' => gTxt('delete')), $event, 'multi_edit').
+			
+			$this->pages('changes', $total, $limit).
+			
+			'</form>';
+
+		$this->pane($out, $message);
+	}
+
+	/**
+	 * Shows differences between two revisions
+	 */
+
+	public function diff() {
+		
+		global $event;
+		
+		extract(gpsa(array(
+			'r',
+			'item',
+		)));
+		
+		$new = $old = NULL;
+		
+		if(!$r || !is_string($r)) {
+			$this->changes(array(gTxt('rah_post_versions_select_something'), E_WARNING));
+			return;
+		}
+		
+		$r = explode('-', $r);
+		
+		if(count($r) === 1 && ($id = (int) $r[0])) {
+			$new = $this->get_revision("id={$id} and setid='".doSlash($item)."'");
+			$old = $this->get_revision("id < {$id} and setid='".doSlash($item)."' ORDER BY id desc LIMIT 1");
+		}
+		
+		else {
+			$old = $this->get_revision("id='".doSlash($r[0])."' and setid='".doSlash($item)."'");
+			$new = $this->get_revision("id='".doSlash($r[1])."' and setid='".doSlash($item)."'");
+		}
+		
+		if(!$old && !$new) {
+			$this->changes(array(gTxt('rah_post_versions_unknown_selection'), E_WARNING));
+			return;
+		}
+		
+		$out[] = '<p>'.
+			
+			gTxt(
+				'rah_post_versions_view_other_revisions',
+				array(
+					'{previous}' => ($old ? '<a href="?event='.$event.'&amp;step=diff&amp;item='.$item.'&amp;r='.$old['id'].'">r'.$old['id'].'</a>' : '-'),
+					'{current}' => '<a href="?event='.$event.'&amp;step=diff&amp;item='.$item.'&amp;r='.$new['id'].'">r'.$new['id'].'</a>'
+				),
+				false
+			). ' ' .
+			
+			gTxt(
+				'rah_post_versions_revision_item_name',
+				array(
+					'{name}' => '<a href="?event='.$event.'&amp;step=changes&amp;item='.$new['setid'].'">'.txpspecialchars($new['title']).'</a>'
+				),
+				false
+			) . ' ' .
+
+			gTxt(
+				'rah_post_versions_revision_committed_by',
+				array(
+					'{author}' => txpspecialchars(get_author_name($new['author'])),
+					'{posted}' => safe_strftime(gTxt('rah_post_versions_date_format'), strtotime($new['posted'])),
+				),
+				false
+			). ' ' .
+			
+			gTxt(
+				'rah_post_versions_revision_from_panel',
+				array(
+					'{event}' => '<a href="?event='.$event.'&amp;filter_event='.txpspecialchars($new['event']).'">'.txpspecialchars($new['event']).'</a>',
+					'{step}' => txpspecialchars($new['step'])
+				),
+				false
+			). ' ' .
+			
+			'</p>';
+		
+		if($old && $old['data'] === $new['data']) {
+			$out[] = '<p>'.gTxt('rah_post_versions_revisions_match').'</p>';
+		}
+		
+		else {
+		
+			$diff = new rah_post_versions_diff();
+			
+			foreach($new['data'] as $key => $val) {
+				
+				if(!isset($old['data'][$key])) {
+					$old['data'][$key] = '';
+				}
+				
+				if($old['data'][$key] === $val) {
+					unset($old['data'][$key]);
+					continue;
+				}
+	
+				$diff->old = $old['data'][$key];
+				$diff->new = $val;
+				
+				$out[] = 
+					'<p>'.txpspecialchars($key).'</p>'.n.
+					'<pre>'.$diff->html().'</pre>';
+				
+				unset($old['data'][$key]);
 			}
 			
-		} else 
-			$this->ui->add(
-				'				<tr>'.n.
-				'					<td colspan="6">'.gTxt($this->pfx.'_no_changes').'</td>'.n.
-				'				</tr>'.n
-			);
+			if($old !== false && !empty($old['data']) && is_array($old['data'])) {
+				
+				foreach($old['data'] as $key => $val) {
+					$out[] = 
+						'<p>'.txpspecialchars($key).'</p>'.n.
+						'<pre>'.
+							'<span class="rah_post_versions_del">'.
+								txpspecialchars($val).
+							'</span>'.
+						'</pre>'.n;
+				}
+			}
+		}
+	
+		$this->pane($out);
+	}
+	
+	/**
+	 * Handles multi-edit methods
+	 */
+	
+	public function multi_edit() {
 		
-		$this->ui->url('?event='.$this->event.'&amp;step='.$this->sort->view().'&amp;item='.gps('item'));
+		extract(psa(array(
+			'selected',
+			'edit_method',
+		)));
 		
-		$this->ui->add(
-			'			</tbody>'.n.
-			'		</table>'.n.
-			'		<div id="'.$this->pfx.'_list_actions" class="rah_ui_list_actions">'.n
-		)->
-		view_limit(array(10,20,100))->pages();
+		require_privs('rah_post_versions_'.((string) $edit_method));
 		
-		$this->ui->add(
-			
-			'			<div id="'.$this->pfx.'_step" class="rah_ui_step">'.n.
-			'				<select name="step">'.n.
-			'					<option value="">'.gTxt($this->pfx.'_with_selected').'</option>'.n.
-			'					<option value="diff">'.gTxt($this->pfx.'_diff').'</option>'.n.
-			(has_privs($this->pfx.'_delete') ?
-				'					<option value="delete_revision">'.gTxt($this->pfx.'_delete').'</option>'.n : ''
-			).
-			'				</select>'.n.
-			'				<input type="submit" value="'.gTxt('go').'" />'.n.
-			'			</div>'.n.
-			'		</div>'.n.
-			'	</form>'.n
-		);
-
-		$this->ui->pane();
+		if(!is_string($edit_method) || empty($selected) || !is_array($selected)) {
+			$this->browser(array(gTxt('rah_post_versions_select_something'), E_WARNING));
+			return;
+		}
+		
+		$method = 'multi_option_' . $edit_method;
+		
+		if(!method_exists($this, $method)) {
+			$method = 'browse';
+		}
+		
+		$this->$method();
 	}
 
 	/**
 	 * Removes items and their all revisions
 	 */
 
-	protected function delete_item() {
-		
-		if(!has_privs($this->pfx.'_delete')) {
-			$this->items();
-			return;
-		}
+	protected function multi_option_delete_item() {
 		
 		$selected = ps('selected');
-		
-		if(empty($selected) || !is_array($selected)) {
-			$this->msg('select_something')->items();
-			return;
-		}
-		
-		$in = implode(',',quote_list($selected));
+		$in = implode(',', quote_list($selected));
 		
 		if(
 			safe_delete(
-				$this->pfx,
+				'rah_post_versions',
 				'setid in('.$in.')'
 			) == false ||
 			safe_delete(
-				$this->pfx.'_sets',
+				'rah_post_versions_sets',
 				'id in('.$in.')'
 			) == false
 		) {
-			$this->msg('error_removing')->items();
+			$this->browser(array(gTxt('rah_post_versions_error_removing'), E_ERROR));
 			return;
 		}
 		
@@ -1269,38 +1145,26 @@ class rah_post_versions_panes extends rah_post_versions {
 			}
 		}
 		
-		callback_event('rah_post_versions_tasks', 'item_deleted');
-		$this->msg('removed')->items();
+		$this->browser(gTxt('rah_post_versions_removed'));
 	}
 	
 	/**
 	 * Deletes individual revisions
 	 */
 
-	protected function delete_revision() {
-		
-		if(!has_privs($this->pfx.'_delete')) {
-			$this->changes();
-			return;
-		}
+	protected function multi_option_delete_revision() {
 		
 		$selected = ps('selected');
-		
-		if(!is_array($selected) || empty($selected)) {
-			$this->msg('select_something')->changes();
-			return;
-		}
-
 		$in = implode(',',quote_list($selected));
 		$setid = (int) ps('item');
 		
 		if(
 			safe_delete(
-				$this->pfx,
+				'rah_post_versions',
 				"id in(".$in.") and setid='".doSlash($setid)."'"
 			) == false
 		) {
-			$this->msg('error_removing')->changes();
+			$this->changes(array(gTxt('rah_post_versions_error_removing'), E_ERROR));
 			return;
 		}
 		
@@ -1311,782 +1175,69 @@ class rah_post_versions_panes extends rah_post_versions {
 			}
 		}
 		
-		callback_event('rah_post_versions_tasks', 'revision_deleted');
-		$this->msg('removed')->changes();
+		$this->changes(gTxt('rah_post_versions_removed'));
 	}
 	
 	/**
-	 * Shows differences between two revisions
+	 * Shows diffs
 	 */
-
-	protected function diff() {
+	
+	protected function multi_option_diff() {
+		$selected = ps('selected');
 		
-		extract(
-			gpsa(
-				array(
-					'r',
-					'selected'
-				)
-			)
-		);
-		
-		$selection = $r && is_string($r) ?
-			explode('-', $r) : $selected;
-		
-		if(!is_array($selection) || count($selection) < 2) {
-			$this->msg('select_two_items')->changes();
+		if(count($selected) !== 2) {
+			$this->changes(array(gTxt('rah_post_versions_select_two_items'), E_ERROR));
 			return;
 		}
 		
-		sort($selection);
-		
-		$rs = $this->get_revision("id='".doSlash($selection[0])."' and setid='".doSlash(gps('item'))."'");
-		
-		if(!$rs) {
-			$this->msg('unknown_selection')->changes();
-			return;
-		}
-		
-		$old = $rs['data'];
-		
-		$r = $this->get_revision("id='".doSlash(end($selection))."' and setid='".doSlash($rs['setid'])."'");
-		
-		if(!$r || !$old) {
-			$this->msg('unknown_selection')->changes();
-			return;
-		}
-		
-		$new = $r['data'];
-		
-		if($new == $old) {
-			$this->msg('revisions_match')->changes();
-			return;
-		}
-		
-		$this->ui->add(
-		
-			'	<p id="'.$this->pfx.'_actions">'.
-			
-			gTxt(
-				$this->pfx.'_view_other_revisions',
-				array(
-					'{previous}' => 
-						'<a href="?event='.$this->event.'&amp;step=view&amp;item='.$rs['setid'].'&amp;r='.$rs['id'].'">r'.
-							$rs['id'].
-						'</a>',
-					'{current}' => 
-						'<a href="?event='.$this->event.'&amp;step=view&amp;item='.$rs['setid'].'&amp;r='.$r['id'].'">r'.
-							$r['id'].
-						'</a>'
-				),
-				false
-			). ' ' .
-			
-			gTxt(
-				$this->pfx.'_revision_item_name',
-				array(
-					'{name}' => '<a href="?event='.$this->event.'&amp;step=changes&amp;item='.$rs['setid'].'">'.htmlspecialchars($r['title']).'</a>'
-				),
-				false
-			) . ' ' .
-
-			gTxt(
-				$this->pfx.'_revision_committed_by',
-				array(
-					'{author}' => htmlspecialchars(get_author_name($r['author'])),
-					'{posted}' => safe_strftime(gTxt($this->pfx.'_date_format'),strtotime($r['posted'])),
-				),
-				false
-			). ' ' .
-			
-			gTxt(
-				$this->pfx.'_revision_from_panel',
-				array(
-					'{event}' => '<a href="?event='.$this->event.'&amp;filter_event='.htmlspecialchars($r['event']).'">'.htmlspecialchars($r['event']).'</a>',
-					'{step}' => htmlspecialchars($r['step'])
-				),
-				false
-			). ' ' .
-			
-			'</p>'
-		);
-		
-		foreach($new as $key => $val) {
-			
-			if(!isset($old[$key]))
-				$old[$key] = '';
-			
-			/*
-				If the field is exact same do not show it at all
-			*/
-			
-			if($old[$key] == $val) {
-				unset($old[$key]);
-				continue;
-			}
-
-			$this->diff->old = $old[$key];
-			$this->diff->new = $val;
-			
-			$this->ui->add( 
-				'<p>'.htmlspecialchars($key).'</p>'.n.
-				'<pre>'.
-					$this->diff->html().
-				'</pre>'
-			);
-			
-			unset($old[$key]);
-		}
-		
-		/*
-			List removed/emptied fields
-		*/
-		
-		if($old)
-			foreach($old as $key => $val) 
-				$this->ui->add(
-					'<div class="'.$this->pfx.'_label"><del>'.htmlspecialchars($key).'</del></div>'.n.
-					'<div class="'.$this->pfx.'_diff">'.
-						'<span class="'.$this->pfx.'_del">'.
-							htmlspecialchars($val).
-						'</span>'.
-					'</div>'.n
-				);
-	
-		$this->ui->pane();
-
-	}
-
-	/**
-	 * Displays individual revision
-	 */
-
-	protected function view() {
-		
-		global $prefs;
-		
-		$id = gps('r');
-		$hidden = do_list($prefs[$this->pfx.'_hidden']);
-		
-		$rs = $this->get_revision("id='".doSlash($id)."' and setid='".doSlash(gps('item'))."'");
-			
-		if(!$rs) {
-			$this->msg('unknown_selection')->changes();
-			return;
-		}
-		
-		if(!$rs['data']) {
-			$this->msg('missing_revision_data')->changes();
-			return;
-		}
-		
-		$prev_rev = 
-			safe_field(
-				'id',
-				$this->pfx,
-				'setid='.$rs['setid'].' and id <= '.$rs['id'].' ORDER BY id desc LIMIT 1, 1'
-			);
-		
-		$data = $rs['data'];
-			
-		$out[] =
-			
-			'		<form method="post" class="'.$this->pfx.'_verify" action="index.php">'.n.
-			'			<p id="'.$this->pfx.'_actions">'.
-			
-			gTxt(
-				$this->pfx.'_revision_item_name',
-				array(
-					'{name}' => '<a href="?event='.$this->event.'&amp;step=changes&amp;item='.$rs['setid'].'">'.htmlspecialchars($rs['title']).'</a>'
-				),
-				false
-			) . ' ' .
-
-			gTxt(
-				$this->pfx.'_revision_committed_by',
-				array(
-					'{author}' => htmlspecialchars(get_author_name($rs['author'])),
-					'{posted}' => safe_strftime(gTxt($this->pfx.'_date_format'),strtotime($rs['posted'])),
-				),
-				false
-			). ' ' .
-			
-			gTxt(
-				$this->pfx.'_revision_from_panel',
-				array(
-					'{event}' => '<a href="?event='.$this->event.'&amp;filter_event='.htmlspecialchars($rs['event']).'">'.htmlspecialchars($rs['event']).'</a>',
-					'{step}' => htmlspecialchars($rs['step'])
-				),
-				false
-			). ' ' .
-			
-			($prev_rev ?
-				'<a href="?event='.$this->event.'&amp;step=diff&amp;item='.htmlspecialchars(gps('item')).'&amp;r='.$prev_rev.'-'.$rs['id'].'">'.
-					gTxt(
-						$this->pfx.'_compare_to_previous',
-						array(
-							'{prev_id}' => 'r'.$prev_rev,
-						)
-					).
-				'</a>' : ''
-			).
-			
-			'</p>'.n;
-		
-		$post = array();
-		
-		foreach($data as $key => $value) {
-			if(is_array($value)) {
-				foreach($value as $needle => $selection)
-					$post[$key.'['.$needle.']'] = $selection;
-			}
-			else $post[$key] = $value;
-		}
-		
-		foreach($post as $key => $val) {
-
-			$name = htmlspecialchars($key);
-		
-			if(in_array($key, $hidden)) {
-				$out[] = hInput($name, $val);
-				continue;
-			}
-			
-			$value = htmlspecialchars($val);
-			
-			$input = 
-				strpos($value,n) === false ?
-					'<input type="text" '.
-						'name="'.$name.'" '.
-						'value="'.$value.'" '.
-					'/>' 
-				:
-					'<textarea '.
-						'name="'.$name.'" '.
-						'cols="100" '.
-						'rows="6" '.
-						'class="code"'.
-					'>'.$value.'</textarea>'
-				;
-			
-			$out[] = '<p><label>'.$name.'<br />'.$input.'</label></p>';
-		}
-		
-		$out[] =
-			hInput($this->pfx.'_repost_item', $rs['setid']).
-			hInput($this->pfx.'_repost_id', $id).
-			tInput().
-			
-			(isset($post['event']) && has_privs($post['event']) ?
-				'			<p id="'.$this->pfx.'_warning">'.gTxt($this->pfx.'_repost_notice').'</p>'.n.
-				'			<p><input type="submit" class="publish" value="'.gTxt($this->pfx.'_repost_this').'" /></p>'.n
-				: ''
-			).
-				
-			'		</form>';
-
-		$this->ui->add($out)->pane();
-	}
-}
-
-/**
- * Tools for handling sorting of lists, pagination and so on
- */
-
-class rah_post_versions_sort extends rah_post_versions {
-	
-	public $offset;
-	public $pages;
-	protected $view;
-	protected $column;
-	protected $direction;
-	protected $columns;
-	protected $limit;
-	protected $total;
-	protected $page;
-	protected $filter = array();
-
-	public function __construct() {
-	}
-
-	/**
-	 * Add column to the list of sortables
-	 * @param string $column
-	 */
-
-	public function add($column) {
-		$this->columns[$column] = $column;
-		return $this;
+		$selected = doArray($selected, 'intval');
+		sort($selected);
+		$_GET['r'] = $selected[0] . '-' . end($selected);
+		$this->diff();
 	}
 	
 	/**
-	 * Set or get viewed list's name
-	 * @param string $view
-	 * @return obj
-	 */
-	
-	public function view($view=NULL) {
-		
-		if($view === NULL)
-			return $this->view;
-		
-		$this->view = $view;
-		return $this;
-	}
-	
-	/**
-	 * Sets or gets the sorting column
-	 * @param string $col DB table column name.
-	 * @return obj
-	 */
-	
-	public function col($col=NULL) {
-		
-		if($col === NULL)
-			return $this->column;
-		
-		$this->column = $col;
-		return $this;
-	}
-	
-	/**
-	 * Sets or gets the direction
-	 * @param string $dir asc or desc.
-	 * @return obj
-	 */
-	
-	public function dir($dir=NULL) {
-		
-		if($dir === NULL)
-			return $this->direction;
-		
-		$this->direction = $dir;
-		return $this;
-	}
-	
-	/**
-	 * Sets or gets the list item limit
-	 * @param int $limit
-	 * @return obj
-	 */
-	
-	public function limit($limit=NULL) {
-		
-		if($limit === NULL)
-			return $this->limit;
-		
-		$this->limit = (int) $limit;
-		return $this;
-	}
-	
-	/**
-	 * Sets or gets the list item offset
-	 * @param int $offset
-	 * @return obj
-	 */
-	
-	public function offset($offset=NULL) {
-		
-		if($offset === NULL)
-			return $this->offset;
-		
-		$this->offset = (int) $offset;
-		return $this;
-	}
-	
-	/**
-	 * Sets or gets the total list item count
+	 * Generates pagination
+	 * @param string $step
 	 * @param int $total
-	 * @return obj
+	 * @param int $limit
+	 * @return string HTML
 	 */
 	
-	public function total($total=NULL) {
+	protected function pages($step, $total, $limit) {
 		
-		if($total === NULL)
-			return $this->total;
-		
-		$this->total = $total;
-		return $this;
-	}
+		global $event;
 	
-	/**
-	 * Sets or gets current page
-	 * @param int $page
-	 * @return obj
-	 */
-	
-	public function page($page=NULL) {
+		list($page, $offset, $num_pages) = pager($total, $limit, gps('page'));
 		
-		if($page === NULL)
-			return $this->page;
+		$start = max(1, $page-5);
+		$end = min($num_pages, $start+10);
 		
-		$this->page = $page;
-		return $this;
-	}
-
-	/**
-	 * Filter list and set the sorting values
-	 * @return obj
-	 */
-
-	public function set() {
-		
-		global $prefs;
-		
-		extract(
-			gpsa(
-				array(
-					'sort',
-					'dir',
-					'limit'
-				)
-			)
-		);
-		
-		$group = $this->prefs_group;
-		
-		if(!$sort && isset($prefs[$this->pfx.'_sort_'.$this->view]))
-			$sort = $prefs[$this->pfx.'_sort_'.$this->view];
-		
-		if(!$dir && isset($prefs[$this->pfx.'_dir_'.$this->view]))
-			$dir = $prefs[$this->pfx.'_dir_'.$this->view];
-		
-		if(!$limit && isset($prefs[$this->pfx.'_limit_'.$this->view]))
-			$limit = $prefs[$this->pfx.'_limit_'.$this->view];
-		
-		if(
-			$sort && isset($this->columns[$sort]) && 
-			($dir == 'asc' || $dir == 'desc')
-		) {
-			set_pref($this->pfx.'_sort_'.$this->view, $sort, $group, 2, '', 0, PREF_PRIVATE);
-			set_pref($this->pfx.'_dir_'.$this->view, $dir, $group, 2, '', 0, PREF_PRIVATE);
-			$this->col($sort)->dir($dir);
+		if($page > 1 && $num_pages > 1) {
+			$out[] = '<a class="navlink" href="?event='.$event.a.'step='.$step.a.'item='.urlencode(gps('item')).a.'page='.($page-1).'">'.gTxt('prev').'</a>';
+		}
+		else {
+			$out[] = '<span class="navlink-disabled">'.gTxt('prev').'</span>';
 		}
 		
-		if($limit && in_array($limit, range(0, 200, 5))) {
-			set_pref($this->pfx.'_limit_'.$this->view, $limit, $group, 2, '', 0, PREF_PRIVATE);
-			$this->limit($limit);
-		}
-
-		foreach($this->list_filters as $filter) {
-				
-			$name = $this->pfx.'_filter_by_'.$filter;
-			
-			if(!has_privs($name)) {
-				$prefs[$name] = '';
-				continue;
+		for($pg = $start; $pg <= $end; $pg++) {
+			if($pg == $page) {
+				$out[] = '<span class="navlink-disabled">'.$pg.'</span>';
 			}
-			
-			$current = isset($prefs[$name]) ? $prefs[$name] : '';
-			$value = isset($_GET[$filter]) ? gps($filter) : $current;
-			
-			if($value !== $current)
-				set_pref($name, $value, $group, 2, '', 0, PREF_PRIVATE);
-			
-			$this->filter[$name] = $prefs[$name] = $value;
-		}
-		
-		list($this->page, $this->offset, $this->pages) = 
-			pager($this->total(), $this->limit(), $this->page());
-		
-		return $this;
-	}
-}
-
-/**
- * Contains UI widgets
- */
-
-class rah_post_versions_widgets extends rah_post_versions {
-
-	private $label;
-	private $link = array();
-	private $attr = array();
-	private $out;
-	private $wrap;
-	private $title;
-	private $message = '';
-	private $th;
-	protected $sort;
-
-	/**
-	 * Pass sort to here
-	 */
-
-	public function __construct(&$sort) {
-		$this->sort = $sort;
-	}
-
-	/**
-	 * Sets element's label text.
-	 * @param string $label
-	 * @return obj
-	 */
-	
-	public function label($label) {
-		$this->label = $label ? gTxt($label) : $label;
-		return $this;
-	}
-
-	/**
-	 * Sets, unsets or gets HTML tag attribute.
-	 * @param string $name
-	 * @param string $value
-	 * @return obj
-	 */
-
-	public function attr($name=NULL, $value=NULL) {
-		
-		if($name === NULL) {
-			
-			if(empty($this->attr))
-				return;
-			
-			foreach($this->attr as $name => $value)
-				$out[] = ' '.$name.'="'.$value.'"';
-			
-			$this->attr = array();
-
-			return implode('', $out);
-		}
-		
-		if($value === NULL)
-			return isset($this->attr[$name]) ? $this->attr[$name] : '';
-		
-		if($value === FALSE) {
-			unset($this->attr[$name]);
-			return $this;
-		}
-		
-		$this->attr[$name] = trim($value);
-		return $this;
-	}
-	
-	/**
-	 * Sets link URL.
-	 * @param string $uri
-	 * @return obj
-	 */
-	
-	public function url($uri=NULL) {
-		
-		if($uri === NULL)
-			return $this->link;
-		
-		$this->link[$this->label] = $uri;
-		return $this;
-	}
-
-	/**
-	 * Build navigation bar
-	 * @return obj
-	 */
-	
-	public function nav() {
-		
-		foreach($this->link as $label => $uri)
-			$nav[] = '<a class="navlink" href="'.$uri.'">'.$label.'</a>';
-		
-		$this->out[] = 
-			'	<p class="nav-terriatery">' . implode('', $nav) . '</p>'.n;
-			
-		$this->link = array();
-		
-		return $this;
-	}
-	
-	/**
-	 * Set page title.
-	 * @param string $title
-	 * @return obj
-	 */
-	
-	public function title($title) {
-		
-		if($title)
-			$this->title = gTxt($title);
-		
-		return $this;
-	}
-
-	/**
-	 * Sets activity message.
-	 * @param string $msg
-	 * @param bool $pfx Whether to prefix.
-	 * @return obj
-	 */
-	
-	public function msg($msg, $pfx=true) {
-		
-		if($msg) {
-			$msg = $pfx ? $this->pfx . '_' . $msg : $msg;
-			$this->message = gTxt($msg);
-		}
-		
-		return $this;
-	}
-	
-	/**
-	 * Adds HTML markup to the pane
-	 * @param string $out
-	 * @return obj
-	 */
-	
-	public function add($out) {
-		$this->out[] = is_array($out) ? implode('', $out) : $out;
-		return $this;
-	}
-	
-	/**
-	 * Returns the pane's markup
-	 * @return string HTML markup.
-	 */
-	
-	public function pane() {
-		
-		pagetop($this->title, $this->message);
-		
-		if(is_array($this->out))
-			$this->out = implode('', $this->out);
-		
-		echo 
-			n.'<div id="'.$this->event.'_container" class="txp-container">'.n.
-				$this->out.n.
-			'</div>'.n;
-	}
-
-	/**
-	 * Adds a heading to a table column
-	 * @param string $column
-	 * @return obj
-	 */
-
-	public function th($column) {
-		$this->th[$column] = array('label' => $this->label, 'attr' => $this->attr);
-		return $this;
-	}
-	
-	/**
-	 * Adds table heading
-	 * @param string $additional Additional URL parameters.
-	 * @return obj
-	 */
-
-	public function thead($additional = '') {
-		
-		$this->out[] = 
-			'			<thead>'.n.
-			'				<tr>'.n;
-		
-		foreach($this->th as $column => $c) {
-			
-			extract($c);
-			
-			$this->attr = $attr; 
-			
-			if(!$label) {
-				$this->out[] = '					<th'.$this->attr().'>&#160;</th>'.n;
-				continue;
+			else {
+				$out[] = '<a class="navlink" href="?event='.$event.a.'step='.$step.a.'item='.urlencode(gps('item')).a.'page='.$pg.'">'.$pg.'</a>';
 			}
-			
-			$order = 'desc';
-			
-			if($this->sort->col() == $column) {
-				$this->attr('class', $this->attr('class') . ' ' . $this->sort->dir());
-				$order = $this->sort->dir() == 'desc' ? 'asc' : 'desc';
-			}
-			
-			$this->out[] = 
-				'					<th'.$this->attr().'>'.
-				'<a href="?event='.$this->event.$additional.
-				'&amp;sort='.$column.'&amp;dir='.$order.'">'.
-					$label.
-				'</a></th>'.n
-			;
 		}
 		
-		$this->out[] = 
-			'				</tr>'.n.
-			'			</thead>'.n.
-			'			<tbody>'.n;
+		if($page < $num_pages && $num_pages > 1) {
+			$out[] = '<a class="navlink" href="?event='.$event.a.'step='.$step.a.'item='.urlencode(gps('item')).a.'page='.($page+1).'">'.gTxt('next').'</a>';
+		}
 		
-		return $this;
-	}
-
-	/**
-	 * Builds pagination.
-	 * @param string $page_att GET parameter setting the page number
-	 * @return obj
-	 */
-
-	public function pages() {
+		else {
+			$out[] = '<span class="navlink-disabled">'.gTxt('next').'</span>';
+		}
 		
-		if($this->sort->pages <= 1)
-			return $this;
-		
-		$end = ($this->sort->page() + 3) > $this->sort->pages ? $this->sort->pages : $this->sort->page() + 3;
-		$start = ($end - 3) < 1 ? 1 : ($end - 3);
-		
-		$url = implode('', $this->url()).'&amp;page=';
-		
-		if($start > 1) 
-			$out[] = 
-				'<a title="'.gTxt($this->pfx.'_go_to_first_page').'" href="'.
-					$url.'1">&#171;</a>';
-		
-		for($i=$start;$i<=$end;$i++)
-			
-			$out[] = 
-				'<a'.($i == $this->sort->page() ? 
-					' class="'.$this->pfx.'_active rah_ui_active"' : '').' href="'.
-					$url.$i.'">'.$i.'</a>';
-		
-		if($end < $this->sort->pages)
-			$out[] = 
-				'<a title="'.gTxt($this->pfx.'_go_to_last_page').'" href="'.
-					$url.$this->sort->pages.'">&#187;</a>';
-		
-		$this->out[] = 
-			'			<div id="'.$this->pfx.'_pages" class="rah_ui_pages">'.
-			implode(' ',$out).
-			'</div>'.n;
-		
-		return $this;
-	}
-
-	/**
-	 * Build page by links.
-	 * @param array $values List of limit values.
-	 * @return obj
-	 */
-
-	public function view_limit($values) {
-		
-		$url = implode('', $this->url()).'&amp;limit=';
-		
-		foreach($values as $val)
-			$out[] = 
-				'<a'.
-					($val == $this->sort->limit() ? 
-						' class="'.$this->pfx.'_active rah_ui_active"' : ''
-					).
-					' title="'.
-						gTxt(
-							$this->pfx.'_view_n_per_page',
-							array(
-								'{items}' => $val
-							)
-						).'"'.
-					' href="'.
-					$url.$val.'">'.$val.'</a>';
-		
-		$this->out[] = 
-			'			<div id="'.$this->pfx.'_view_limit" class="rah_ui_view_limit">'.
-			'<strong>'.gTxt($this->pfx.'_set_view_limit').'</strong> '.
-			implode(' <span class="rah_ui_sep">|</span> ',$out).
-			'</div>'.n;
-		
-		return $this;
+		return '<p class="prev-next">'.implode(n, $out).'</p>';
 	}
 }
 
@@ -2099,9 +1250,6 @@ class rah_post_versions_diff {
 	public $old;
 	public $new;
 	protected $delimiter = n;
-	
-	public function __construct() {
-	}
 
 	/**
 	 * Clean line breaks.
@@ -2228,27 +1376,4 @@ class rah_post_versions_diff {
 	}
 }
 
-/**
- * Returns the item's ID (if any).
- * @param string $key Name of the POST field containing the ID.
- * @return int
- */
-
-	function rah_post_versions_id($key='ID') {
-		$id = gps($key);
-		if(!$id && isset($GLOBALS['ID']))
-			$id = $GLOBALS['ID'];
-		return $id;
-	}
-
-/**
- * Textarea for preferences panel
- * @param string $name
- * @param int $val
- * @return string HTML markup
- */
-
-	function rah_post_versions_textarea($name,$val) {
-		return text_area($name, 200, 300, $val, $name);
-	}
 ?>
