@@ -808,7 +808,7 @@ EOF;
 			echo '<p id="warning">'.gTxt('rah_post_versions_repository_data_missing').'</p>';
 		}
 		
-		echo '<div id="rah_post_versions_container" class="txp-container">'.n.
+		echo '<div class="txp-container">'.n.
 			$content.n.
 			'</div>'.n;
 	}
