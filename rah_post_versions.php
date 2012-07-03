@@ -726,6 +726,10 @@ EOF;
 			$column[] = column_head($event.'_'.$name, $name, $event, true, $name === $sort && $dir === 'asc' ? 'desc' : 'asc', '', '', ($name === $sort ? $dir : ''));
 		}
 		
+		if(has_privs('rah_post_versions_preferences')) {
+			$out[] = '<p class="nav-tertiary"><a class="navlink" href="?event=prefs&amp;step=advanced_prefs#prefs-rah_post_versions_gzip">'.gTxt('rah_backup_preferences').'</a></p>';
+		}
+		
 		$out[] =
 			'<form method="post" action="index.php" class="multi_edit_form">'.
 			eInput($event).
@@ -804,20 +808,7 @@ EOF;
 			echo '<p id="warning">'.gTxt('rah_post_versions_repository_data_missing').'</p>';
 		}
 		
-		echo 
-			n.
-			
-			'<div id="rah_post_versions_container" class="txp-container">'.n.
-			
-			'	<p class="nav-tertiary">'.
-			
-			(has_privs('rah_post_versions_preferences') ? 
-				'<a class="navlink" href="?event=prefs&amp;step=advanced_prefs#prefs-rah_post_versions_gzip">'.
-					gTxt('rah_backup_preferences').
-				'</a>' : ''
-			).
-					
-			'</p>'.n.
+		echo '<div id="rah_post_versions_container" class="txp-container">'.n.
 			$content.n.
 			'</div>'.n;
 	}
