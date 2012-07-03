@@ -364,10 +364,6 @@ EOF;
 			$step = 'browser';
 		}
 		
-		if(self::get()->nowrite == true) {
-			echo '<p id="warning">'.gTxt('rah_post_versions_repository_data_missing').'</p>';
-		}
-		
 		self::get()->$step();
 	}
 
@@ -802,6 +798,10 @@ EOF;
 		
 		if(is_array($content)) {
 			$content = implode(n, $content);
+		}
+		
+		if(self::get()->nowrite == true) {
+			echo '<p id="warning">'.gTxt('rah_post_versions_repository_data_missing').'</p>';
 		}
 		
 		echo 
