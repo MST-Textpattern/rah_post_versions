@@ -190,11 +190,11 @@ class rah_post_versions {
 					val='".doSlash($value[1])."',
 					type=1,
 					event='rah_postver',
-					html='".doSlash($value[2])."',
+					html='".doSlash($value[0])."',
 					position=".$position
 				);
 				
-				$prefs[$name] = $val;
+				$prefs[$name] = $value[1];
 			}
 			
 			$position++;
@@ -353,6 +353,8 @@ EOF;
 	 */
 
 	public function __construct() {
+		define('rah_post_versions_static_dir', true);
+		
 		$this->go_static();
 		$this->compression();
 	}
@@ -424,7 +426,9 @@ EOF;
 
 	protected function compression() {
 		
-		if(defined('rah_post_versions_compress') && function_exists('gzencode') && function_exists('gzinflate')) {
+		global $prefs;
+		
+		if($prefs['rah_post_versions_gzip'] && function_exists('gzencode') && function_exists('gzinflate')) {
 			$this->compress = true;
 		}
 		
@@ -438,6 +442,8 @@ EOF;
 	 */
 
 	public function get_revision($where) {
+		
+		global $prefs;
 		
 		$r = safe_row('*', 'rah_post_versions', $where);
 		
@@ -472,7 +478,7 @@ EOF;
 				$r['data'] = gzinflate(substr($r['data'], 10));
 			}
 			
-			$r['data'] = unserialize($r['data']);
+			@$r['data'] = unserialize($r['data']);
 		}
 
 		return $r;
@@ -652,27 +658,30 @@ EOF;
 		$this->static_header = 
 			'<?php if(!defined("rah_post_versions_static_dir")) die("rah_post_versions_static_dir undefined"); ?>';
 		
-		if(
-			defined('rah_post_versions_static_dir') &&
-			file_exists(rah_post_versions_static_dir) &&
-			is_dir(rah_post_versions_static_dir) &&
-			is_readable(rah_post_versions_static_dir) &&
-			is_writable(rah_post_versions_static_dir)
-		)
-			$this->static_dir = rtrim(rah_post_versions_static_dir, '/\\');
+		$dir = trim(rtrim($prefs['rah_post_versions_repository_path'], '/\\'));
+		
+		if($dir && strpos($dir, './') === 0) {
+			$dir = txpath.DS.substr($dir, 2);
+		}
+		
+		if($dir && file_exists($dir) && is_dir($dir) && is_readable($dir) && is_writable($dir)) {
+			$this->static_dir = $dir;
+		}
 
 		if(!$this->static_dir && isset($prefs['rah_post_versions_static'])) {
 			$this->nowrite = true;
 			return;
 		}
 
-		if(!$this->static_dir || isset($prefs['rah_post_versions_static']))
+		if(!$this->static_dir || isset($prefs['rah_post_versions_static'])) {
 			return;
+		}
 		
-		$r = getThings('describe '.safe_pfx('rah_post_versions'));
+		$r = @getThings('describe '.safe_pfx('rah_post_versions'));
 		
-		if(!$r || !is_array($r) || !in_array('data', $r))
+		if(!$r || !is_array($r) || !in_array('data', $r)) {
 			return;
+		}
 		
 		$rs =
 			safe_rows(
@@ -682,31 +691,18 @@ EOF;
 			);
 		
 		foreach($rs as $a) {
-			
 			$file = $this->static_dir . DS . $a['setid'] . '_r' . $a['id'] . '.php';
 			
-			if(file_exists($file))
-				continue;
-			
-			if(
-				file_put_contents(
-					$file,
-					$this->static_header . $a['data']
-				) === false
-			)
+			if(!file_exists($file) && file_put_contents($file, $this->static_header . $a['data']) === false)
 				return false;
 		}
 		
-		if(
-			safe_alter(
-				'rah_post_versions',
-				'DROP data'
-			) === false
-		)
+		if(safe_alter('rah_post_versions', 'DROP data') === false) {
 			return false;
+		}
 		
-		set_pref('rah_post_versions_static', '1', 'rah_postver', 2, '', 0);
-		$prefs['rah_post_versions_static'] = '1';
+		set_pref('rah_post_versions_static', 1, 'rah_postver', 2, '', 0);
+		$prefs['rah_post_versions_static'] = 1;
 
 		return true;
 	}
@@ -1072,7 +1068,7 @@ EOF;
 					$out[] = 
 						'<p>'.txpspecialchars($key).'</p>'.n.
 						'<pre>'.
-							'<span class="rah_post_versions_del">'.
+							'<span class="rah_ui_del">'.
 								txpspecialchars($val).
 							'</span>'.
 						'</pre>'.n;
