@@ -307,14 +307,7 @@ EOF;
 		}
 		
 		rah_post_versions::get()->create_revision(
-			array(
-				'grid' => $grid,
-				'title' => $title,
-				'author' => $txp_user,
-				'event' => $event,
-				'step' => $step,
-				'data' => $data
-			)
+			$grid, $title, $txp_user, $event, $step, $data
 		);
 	}
 
@@ -456,153 +449,97 @@ EOF;
 	 * @return bool FALSE on error, TRUE on success or when new commit isn't needed.
 	 */
 	
-	public function create_revision($data) {
+	public function create_revision($grid, $title, $author, $event, $step, $data) {
 		
 		global $prefs;
 		
-		if(
-			$this->nowrite == true || empty($data['data']) ||
-			count($data) != 6 ||
-			!is_array($data['data']) ||
-			!isset($data['author']) ||
-			in_array($data['author'], do_list($prefs['rah_post_versions_authors']))
-		)
-			return false;
-			
-		/*
-		$exclude = 
-			array_merge(
-				do_list($prefs['rah_post_versions_exclude']),
-				array(
-					'rah_post_versions_repost_item',
-					'rah_post_versions_repost_id',
-					'_txp_token'
-				)
-			);
-		
-		foreach($exclude as $name) {
-			unset($data['data'][$name]);
-		}
-		
-		if(empty($data['data'])) {
+		if($this->nowrite) {
 			return false;
 		}
-		*/
 		
-		/*
-			Revision data is required
-		*/
+		unset($data['_txp_token']);
 		
-		foreach(array('event','step','title','grid') as $name) {
-			if(!isset($data[$name]) || !is_scalar($data[$name]) || !trim($data[$name]))
-				return false;
+		foreach(array('grid', 'title', 'author', 'event', 'step') as $name) {
+			$sql[$name] = $name."='".doSlash($$name)."'";
 		}
-		
-		/*
-			Author needs to be a real account
-		*/
-		
-		if(
-			!safe_row(
-				'name',
-				'txp_users',
-				"name='".doSlash($data['author'])."' LIMIT 0, 1"
-			)
-		)
-			return false;
-		
-		foreach($data as $name => $value)
-			$sql[$name] = $name."='".doSlash($value)."'";
 		
 		$sql['posted'] = 'posted=now()';
 		
-		$r = 
-			safe_row(
+		$setid = 
+			safe_field(
 				'id',
 				'rah_post_versions_sets',
-				$sql['event'].' and '.$sql['grid'].' LIMIT 0, 1'
+				$sql['event'].' and '.$sql['grid'].' limit 1'
 			);
 		
-		/*
-			If no existing records, create a new item
-		*/
-		
-		if(!$r) {
-			
-			if(
+		if(!$setid) {
+			$setid = 
 				safe_insert(
 					'rah_post_versions_sets',
-					'modified=now(),changes=1,'.
+					'modified=now(), changes=1,'.
 					$sql['title'].','.
 					$sql['event'].','.
 					$sql['step'].','.
 					$sql['grid']
-				) == false
-			)
-				return false;
+				);
 			
-			$data['setid'] = mysql_insert_id();
+			if($setid === false) {
+				return false;
+			}
 		}
 		
 		else {
 			
-			$data['setid'] = $r['id'];
+			$latest = $this->get_revision("setid='".doSlash($setid)."' ORDER BY id desc");
 			
-			/*
-				If no changes were done, end here.
-			*/
-			
-			$latest = $this->get_revision("setid='".doSlash($data['setid'])."' ORDER BY id desc");
-			
-			if($latest && $data['data'] == $latest['data'])
+			if($latest && $data === $latest['data']) {
 				return true;
+			}
 			
 			if(
 				safe_update(
 					'rah_post_versions_sets',
-					'modified=now(), changes=changes+1,'.$sql['title'],
-					"id='".doSlash($data['setid'])."'"
+					'modified=now(), changes=changes+1, '.$sql['title'],
+					"id='".doSlash($setid)."'"
 				) == false
-			)
+			) {
 				return false;
+			}
 		}
 		
 		if($this->compress) {
-			$data['data'] = base64_encode(gzencode(serialize($data['data'])));
-		}
-		else {
-			$data['data'] = base64_encode(serialize($data['data']));
-		}
-		
-		if($this->static_dir) {
-			unset($sql['data']);
+			$data = base64_encode(gzencode(serialize($data)));
 		}
 		
 		else {
+			$data = base64_encode(serialize($data));
+		}
+		
+		if(!$this->static_dir) {
 			$sql['data'] = "data='".doSlash($data)."'";
 		}
 		
-		$sql['setid'] = "setid='".doSlash($data['setid'])."'";
+		$sql['setid'] = "setid='".doSlash($setid)."'";
 		
-		if(
+		$id = 
 			safe_insert(
 				'rah_post_versions',
 				implode(',', $sql)
-			) == false
-		)
+			);
+			
+		if($id === false) {
 			return false;
-		
-		$id = $data['id'] = mysql_insert_id();
+		}
 		
 		if($this->static_dir) {
 			if(
-				!$id || 
 				file_put_contents(
-					$this->static_dir . DS . $data['setid'] . '_r' . $id . '.php',
-					$this->static_header . $data['data']
+					$this->static_dir.'/'.$setid.'_r'.$id.'.php',
+					$this->static_header.$data
 				) === false
-			)
+			) {
 				return false;
+			}
 		}
 
 		callback_event('rah_post_versions_tasks', 'revision_created', 0, $data);

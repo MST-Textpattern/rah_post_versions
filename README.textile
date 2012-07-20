@@ -67,16 +67,7 @@ h3. API
 
 p. The API allows picking up changes (commits), and creating new revisions directly from plugins, and other PHP code snippets. The API can be used to make rah_post_versions to keep track of the changes done via plugin's editor interface.
 
-p(#rah_post_versions-create_revision). Creating a new revision is as easy as calling a single class method, *rah_post_versions::create_revision(array $data)*. The @create_revision()@ has a single attribute, @$data@. The @$data@ should be an array, containing all the revision data. The @$data@ array's keys (items) are as follows:
-
-bc. array(
-	'grid' => $grid,
-	'title' => $title,
-	'author' => $user,
-	'event' => $event,
-	'step' => $step,
-	'data' => array()
-);
+p. Creating a new revision is as easy as calling a single class method, *rah_post_versions::create_revision(mixed $grid, string $title, string $author, string $event, string $step, array $data)*. The arguments are as follows.
 
 p. *grid* (string, 1-255 bytes, required)
 Is a unique ID which is used together with @event@ to detect which item the revision belongs to. The @grid@'s value can be any string between 1-255 bytes, as long as it helps to detect the item correctly. Otherwise the revision doesn't know which item it belongs to.
@@ -100,9 +91,7 @@ p. @rah_post_versions::create_revision()@ returns @FALSE@ on error, and @TRUE@ o
 
 p. *Basic usage*
 
-bc.. $repository = new rah_post_versions();
-
-/* Some data for the revision */
+bc.. /* Some data for the revision */
 
 $data = array(
 	'content' => 'Hello World!',
@@ -113,49 +102,7 @@ $data = array(
 
 /* Create the revision */
 
-$repository->create_revision(
-	array(
-		'grid' => 'my_item_specific_id',
-		'title' => 'Item Name',
-		'author' => 'loginname',
-		'event' => 'xxx_myplugin_event',
-		'step' => 'save',
-		'data' => $data
-	)
-);
-
-p. *More advanced use of rah_post_versions::create_revision().* In the example we check if @rah_post_versions@ class exists to be sure that the plugin is installed, and use global admin-side variables to populate some of the admin-side information. Revision data is picked directly from @$_POST@ data.
-
-bc.. /**
- * We wrap everything into function
- * @return bool FALSE on error, TRUE on success or when class isn't available
-*/
-
-function xxx_commit_to_repo() {
-	global $txp_user, $event, $step;
-
-	/* If class doesn't exists, end here */
-
-	if(!class_exists('rah_post_versions'))
-		return true;
-
-	$repository = new rah_post_versions();
-
-	/* Create the revision, return boolean */
-
-	return $repository->create_revision(
-		array(
-			'grid' => gps('name'),
-			'title' => gps('name'),
-			'author' => $txp_user,
-			'event' => $event,
-			'step' => $step,
-			'data' => $_POST
-		)
-	);
-}
-
-echo xxx_commit_to_repo(); /* Returns FALSE on error */
+rah_post_versions::get()->create_revision('my_item_specific_id', 'Item Name', 'loginname', 'xxx_myplugin_event', 'save', $data);
 
 h3. Hooking and callbacks
 
