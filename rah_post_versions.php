@@ -875,6 +875,15 @@ EOF;
 			$column[] = hCell('<a href="?event='.$event.a.'step=changes'.a.'item='.urlencode(gps('item')).a.'page='.$page.a.'sort='.$name.a.'dir='.($name === $sort && $dir === 'asc' ? 'desc' : 'asc').'">'.gTxt($event.'_'.$name).'</a>', '',  ($name === $sort ? ' class="'.$dir.'"' : ''));
 		}
 		
+		$out[] = '<p class="txp-buttons">';
+		$out[] = '<a href="?event='.$event.'">'.gTxt('rah_post_versions_main').'</a>';
+		
+		if(has_privs('rah_post_versions_preferences')) {
+			$out[] = '<a href="?event=prefs&amp;step=advanced_prefs#prefs-rah_post_versions_gzip">'.gTxt('rah_backup_preferences').'</a>'.n;
+		}
+		
+		$out[] = '</p>';
+		
 		$out[] = 
 			'<form method="post" action="index.php" class="multi_edit_form">'.n.
 			eInput($event).n.
