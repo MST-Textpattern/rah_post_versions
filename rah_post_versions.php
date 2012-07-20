@@ -727,7 +727,7 @@ EOF;
 		}
 		
 		if(has_privs('rah_post_versions_preferences')) {
-			$out[] = '<p class="txp-buttons"><a href="?event=prefs&amp;step=advanced_prefs#prefs-rah_post_versions_gzip">'.gTxt('rah_backup_preferences').'</a></p>';
+			$out[] = '<p class="txp-buttons"><a href="?event=prefs&amp;step=advanced_prefs#prefs-rah_post_versions_gzip">'.gTxt('rah_post_versions_preferences').'</a></p>';
 		}
 		
 		$out[] =
@@ -879,7 +879,7 @@ EOF;
 		$out[] = '<a href="?event='.$event.'">'.gTxt('rah_post_versions_main').'</a>';
 		
 		if(has_privs('rah_post_versions_preferences')) {
-			$out[] = '<a href="?event=prefs&amp;step=advanced_prefs#prefs-rah_post_versions_gzip">'.gTxt('rah_backup_preferences').'</a>'.n;
+			$out[] = '<a href="?event=prefs&amp;step=advanced_prefs#prefs-rah_post_versions_gzip">'.gTxt('rah_post_versions_preferences').'</a>'.n;
 		}
 		
 		$out[] = '</p>';
