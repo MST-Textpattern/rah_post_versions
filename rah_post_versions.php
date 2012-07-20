@@ -445,8 +445,13 @@ EOF;
 	
 	/**
 	 * Creates a new revision
+	 * @param mixed $grid
+	 * @param string $title
+	 * @param string $author
+	 * @param string $event
+	 * @param string $step
 	 * @param array $data
-	 * @return bool FALSE on error, TRUE on success or when new commit isn't needed.
+	 * @return bool
 	 */
 	
 	public function create_revision($grid, $title, $author, $event, $step, $data) {
