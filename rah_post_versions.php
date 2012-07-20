@@ -734,6 +734,7 @@ EOF;
 			'<form method="post" action="index.php" class="multi_edit_form">'.
 			eInput($event).
 			tInput().
+			'<div class="txp-listtables">'.
 			'<table class="txp-list">'.
 			'<thead>'.tr(implode('', $column)).'</thead>'.
 			'<tbody>';
@@ -778,7 +779,8 @@ EOF;
 		
 		$out[] = 
 			'</tbody>'.n.
-			'</table>'.n;
+			'</table>'.n.
+			'</div>'.n;
 			
 		if($show_selects) {
 			$out[] = multi_edit(array('delete_item' => gTxt('delete')), $event, 'multi_edit');
@@ -876,6 +878,7 @@ EOF;
 			eInput($event).n.
 			hInput('item', $item).n.
 			tInput().n.
+			'<div class="txp-listtables">'.n.
 			'<table class="txp-list">'.n.
 			'<thead>'.tr(implode('', $column)).'</thead>'.
 			'<tbody>'.n;
@@ -909,6 +912,7 @@ EOF;
 		$out[] =
 			'</tbody>'.n.
 			'</table>'.n.
+			'</div>'.n.
 			multi_edit(array('diff' => gTxt('rah_post_versions_diff'), 'delete_item' => gTxt('delete')), $event, 'multi_edit').
 			
 			$this->pages('changes', $total, $limit).
