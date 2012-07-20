@@ -122,11 +122,10 @@ h2. Changelog
 h3. Version 1.0 - upcoming
 
 * Fixed: Trims item name from unneeded whitespace before saving the revision. Fixes issue where a nameless item could potentially be added to the revision browser.
-* Fixed: Do not escape a field name before checking it against list of hidden, but after. Fixes issue where field names with special characters couldn't be hidden.
 * Fixed: issue where admin-side @step@ was used directly in links' target. In some cases some links could become invalid, or cause extra unneeded processing while still working.
-* Fixed: Messager shouldn't listen HTTP GETs, just POSTs. Neither it should take the admin-side pane link from user's sent data.
+
 * Added: API and hooking points for developers. Extra functionality can be added by hooking to callback events, and developers can create revisions directly from their code (plugins etc) with a single class method.
-* Added: Optional support for storing revision data in static files, leaving only less storage space requiring meta data to the database table. The feature should considered advanced, and due to that isn't directly configurable via GUI as it requires understanding of security, filesystem permissions and MySQL, and has the risk of data losses. Activating the feature requires setting an path in Textpattern's config.php file, and creating a writable directory in a secure location, outside publicly accessible web root.
+* Added: Optional support for storing revision data in static files, leaving only less storage space requiring meta data to the database table.
 * Added: CSRF protection.
 * Added: Doesn't save a revision if nothing changed from the latest revision.
 * Added: Admin-side interface uses language strings. The interface is translatable using Textpattern's Textpacks.
@@ -135,7 +134,6 @@ h3. Version 1.0 - upcoming
 * Added: Lists can now be arranged by clicking column headings.
 * Added: Group permission integration. For instance, now only Publishers can remove items, and only appropriate interface elements are shown to users with different permissions.
 * Added: Direct link to diff tool on individual item's page. Makes it easier to compare changes to the older revision.
-* Changed: Default configuration for first installs. Added @rah_external_output:save@ and @rah_autogrowing_textarea:save@ to watched events.
 * Changed: Integrated plugin's preferences to Textpattern's native admin-side preferences panel. As such, editing preferences is restricted by group permissions.
 * Changed: Diff tool now takes newest and oldest revision from the selection, instead of the first two.
 * Changed: Doesn't carry sorting options in URLs.
@@ -144,8 +142,9 @@ h3. Version 1.0 - upcoming
 * Improved: Database query efficiency. New installs get some new indexes too.
 * Removed: Emailing feature. Relatively pointless, and didn't do anything.
 * Removed: Filtering bar. All the options are integrated to elsewhere, to appropriate locations. As such, separate clunky filtering bar isn't needed.
+* Removed: preference fields, including identification code, excluded- and hidden-fields and tracked events.
 * Re-written in PHP5-level OOP. Takes advantage of chaining and so on.
-* Now requires Textpattern version 4.4.1 or newer, and PHP version 5 or newer.
+* Now requires Textpattern version 4.5.0 or newer.
 
 h3. Version 0.9 - 2011/06/18
 
