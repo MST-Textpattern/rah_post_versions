@@ -727,7 +727,7 @@ EOF;
 		}
 		
 		if(has_privs('rah_post_versions_preferences')) {
-			$out[] = '<p class="nav-tertiary"><a class="navlink" href="?event=prefs&amp;step=advanced_prefs#prefs-rah_post_versions_gzip">'.gTxt('rah_backup_preferences').'</a></p>';
+			$out[] = '<p class="txp-buttons"><a href="?event=prefs&amp;step=advanced_prefs#prefs-rah_post_versions_gzip">'.gTxt('rah_backup_preferences').'</a></p>';
 		}
 		
 		$out[] =
