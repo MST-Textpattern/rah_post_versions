@@ -28,6 +28,8 @@
 		register_callback(array('rah_post_versions', 'install'), 'plugin_lifecycle.rah_post_versions');
 		register_callback(array('rah_post_versions', 'prefs'), 'plugin_prefs.rah_post_versions');
 	}
+	
+	define('rah_post_versions_static_dir', true);
 
 /**
  * Main class
@@ -316,8 +318,6 @@ EOF;
 	 */
 
 	public function __construct() {
-		define('rah_post_versions_static_dir', true);
-		
 		$this->go_static();
 		$this->compression();
 	}
