@@ -542,7 +542,7 @@ EOF;
 			}
 		}
 
-		callback_event('rah_post_versions_tasks', 'revision_created', 0, $data);
+		callback_event('rah_post_versions.revision_created', $data);
 		return true;
 	}
 
