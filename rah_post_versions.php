@@ -806,6 +806,8 @@ EOF;
 			$content = implode(n, $content);
 		}
 		
+		echo '<h1 class="txp-heading">'.gTxt('rah_post_versions').'</h1>'.n;
+		
 		if(self::get()->nowrite == true) {
 			echo '<p id="warning">'.gTxt('rah_post_versions_repository_data_missing').'</p>';
 		}
