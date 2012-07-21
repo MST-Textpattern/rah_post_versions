@@ -308,6 +308,8 @@ EOF;
 			$data[$key] = ps($key);
 		}
 		
+		unset($data['_txp_token']);
+		
 		rah_post_versions::get()->create_revision(
 			$grid, $title, $txp_user, $event, $step, $data
 		);
@@ -450,8 +452,6 @@ EOF;
 		if($this->nowrite) {
 			return false;
 		}
-		
-		unset($data['_txp_token']);
 		
 		foreach(array('grid', 'title', 'author', 'event', 'step') as $name) {
 			$sql[$name] = $name."='".doSlash($$name)."'";
