@@ -618,7 +618,12 @@ EOF;
 			'dir',
 		)));
 		
+		$methods = array();
 		$columns = array('id', 'event', 'title', 'modified', 'changes');
+		
+		if(has_privs('rah_post_versions_delete_item')) {
+			$methods['delete_item'] = gTxt('delete');
+		}
 		
 		if($dir !== 'desc' && $dir !== 'asc') {
 			$dir = get_pref($event.'_browser_dir', 'desc');
@@ -647,9 +652,7 @@ EOF;
 		
 		list($page, $offset, $num_pages) = pager($total, $limit, gps('page'));
 		
-		$show_selects = has_privs('rah_post_versions_delete_item');
-		
-		if($show_selects) {
+		if($methods) {
 			$column[] = hCell(fInput('checkbox', 'select_all', 1, '', '', '', '', '', 'select_all'), '', ' title="'.gTxt('toggle_all_selected').'" class="multi-edit"');
 		}
 		
@@ -691,7 +694,7 @@ EOF;
 			
 			$column = array();
 			
-			if($show_selects) {
+			if($methods) {
 				$column[] = td(fInput('checkbox', 'selected[]', $a['id']), '', 'multi-edit');
 			}
 			
@@ -713,8 +716,8 @@ EOF;
 			'</table>'.n.
 			'</div>'.n;
 			
-		if($show_selects) {
-			$out[] = multi_edit(array('delete_item' => gTxt('delete')), $event, 'multi_edit');
+		if($methods) {
+			$out[] = multi_edit($methods, $event, 'multi_edit');
 		}
 		
 		$out[] = $this->pages('browser', $total, $limit);
@@ -773,7 +776,16 @@ EOF;
 			return;
 		}
 		
+		$methods = array();
 		$columns = array('id', 'title', 'posted', 'step', 'author');
+		
+		if(has_privs('rah_post_versions_diff')) {
+			$methods['diff'] = gTxt('rah_post_versions_diff');
+		}
+		
+		if(has_privs('rah_post_versions_delete_revision')) {
+			$methods['delete_revision'] = gTxt('delete');
+		}
 		
 		if($dir !== 'desc' && $dir !== 'asc') {
 			$dir = get_pref($event.'_changes_dir', 'desc');
@@ -800,7 +812,9 @@ EOF;
 		
 		list($page, $offset, $num_pages) = pager($total, $limit, gps('page'));
 		
-		$column[] = hCell(fInput('checkbox', 'select_all', 1, '', '', '', '', '', 'select_all'), '', ' title="'.gTxt('toggle_all_selected').'" class="multi-edit"');
+		if($methods) {
+			$column[] = hCell(fInput('checkbox', 'select_all', 1, '', '', '', '', '', 'select_all'), '', ' title="'.gTxt('toggle_all_selected').'" class="multi-edit"');
+		}
 		
 		foreach($columns as $name) {
 			$column[] = hCell('<a href="?event='.$event.a.'step=changes'.a.'item='.urlencode(gps('item')).a.'page='.$page.a.'sort='.$name.a.'dir='.($name === $sort && $dir === 'asc' ? 'desc' : 'asc').'">'.gTxt($event.'_'.$name).'</a>', '',  ($name === $sort ? ' class="'.$dir.'"' : ''));
@@ -833,32 +847,40 @@ EOF;
 			);
 		
 		foreach($rs as $a) {
-			$out[] = 
-				tr(
-					td(fInput('checkbox', 'selected[]', $a['id']), '', 'multi-edit').
-					td($a['id']).
-					td('<a href="?event='.$event.'&amp;step=diff&amp;item='.$item.'&amp;r='.$a['id'].'">'.txpspecialchars($a['title']).'</a>').
-					td(safe_strftime(gTxt('rah_post_versions_date_format'), strtotime($a['posted']))).
-					td(txpspecialchars($a['step'])).
-					td(txpspecialchars(get_author_name($a['author'])))
-				);
+			$column = array();
+			
+			if($methods) {
+				$column[] = td(fInput('checkbox', 'selected[]', $a['id']), '', 'multi-edit');
+			}
+			
+			$column[] = td($a['id']);
+			$column[] = td('<a href="?event='.$event.'&amp;step=diff&amp;item='.$item.'&amp;r='.$a['id'].'">'.txpspecialchars($a['title']).'</a>');
+			$column[] = td(safe_strftime(gTxt('rah_post_versions_date_format'), strtotime($a['posted'])));
+			$column[] = td(txpspecialchars($a['step']));
+			$column[] = td(txpspecialchars(get_author_name($a['author'])));
+			
+			$out[] = tr(implode('', $column));
 		}
 		
 		if(!$rs) {
 			$out[] =
 				'<tr>'.n.
-				'	<td colspan="6">'.gTxt('rah_post_versions_no_changes').'</td>'.n.
+				'	<td colspan="'.count($column).'">'.gTxt('rah_post_versions_no_changes').'</td>'.n.
 				'</tr>'.n;
 		}
 		
 		$out[] =
 			'</tbody>'.n.
 			'</table>'.n.
-			'</div>'.n.
-			multi_edit(array('diff' => gTxt('rah_post_versions_diff'), 'delete_item' => gTxt('delete')), $event, 'multi_edit').
+			'</div>'.n;
+		
+		if($methods) {
+			$out[] = multi_edit($methods, $event, 'multi_edit');
+		}
+		
+		$out[] =
 			
 			$this->pages('changes', $total, $limit).
-			
 			'</form>';
 
 		$this->pane($out, $message);
