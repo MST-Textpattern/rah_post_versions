@@ -318,8 +318,13 @@ EOF;
 	 */
 
 	public function __construct() {
+		global $prefs;
+		
+		if($prefs['rah_post_versions_gzip'] && function_exists('gzencode') && function_exists('gzinflate')) {
+			$this->compress = true;
+		}
+	
 		$this->go_static();
-		$this->compression();
 	}
 	
 	/**
@@ -376,22 +381,6 @@ EOF;
 		}
 		
 		return $this->events;
-	}
-	
-	/**
-	 * Check for availability of compression methods
-	 * @return bool
-	 */
-
-	protected function compression() {
-		
-		global $prefs;
-		
-		if($prefs['rah_post_versions_gzip'] && function_exists('gzencode') && function_exists('gzinflate')) {
-			$this->compress = true;
-		}
-		
-		return $this->compress;
 	}
 
 	/**
