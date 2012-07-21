@@ -14,7 +14,6 @@ rah_post_versions_step => Toimenpide
 rah_post_versions_author => Tekijä
 rah_post_versions_date_format => %d.%m.%Y %H:%M:%S
 rah_post_versions_no_changes => Ei näytettäviä muutoksia.
-rah_post_versions_delete => Poista
 rah_post_versions_diff => Vertaa
 rah_post_versions_removed => Valitut poistettu.
 rah_post_versions_error_removing => Poistaminen epäonnistui tietokantavirheen seurauksena.
