@@ -715,12 +715,17 @@ EOF;
 			'</tbody>'.n.
 			'</table>'.n.
 			'</div>'.n;
-			
+		
 		if($methods) {
 			$out[] = multi_edit($methods, $event, 'multi_edit');
 		}
 		
-		$out[] = $this->pages('browser', $total, $limit);
+		$out[] = 
+			'</form>'.
+			'<div id="'.$event.'_navigation" class="txp-navigation">'.
+				nav_form($event, $page, $num_pages, '', '', '', '', '', '', 'browse').
+			'</div>';
+		
 		$this->pane($out, $message);
 	}
 
@@ -879,9 +884,10 @@ EOF;
 		}
 		
 		$out[] =
-			
-			$this->pages('changes', $total, $limit).
-			'</form>';
+			'</form>'.
+			'<div id="'.$event.'_navigation" class="txp-navigation">'.
+				nav_form($event, $page, $num_pages, '', '', '', '', '', '', 'browse').
+			'</div>';
 
 		$this->pane($out, $message);
 	}
@@ -1119,50 +1125,6 @@ EOF;
 		sort($selected);
 		$_GET['r'] = $selected[0] . '-' . end($selected);
 		$this->diff();
-	}
-	
-	/**
-	 * Generates pagination
-	 * @param string $step
-	 * @param int $total
-	 * @param int $limit
-	 * @return string HTML
-	 */
-	
-	protected function pages($step, $total, $limit) {
-		
-		global $event;
-	
-		list($page, $offset, $num_pages) = pager($total, $limit, gps('page'));
-		
-		$start = max(1, $page-5);
-		$end = min($num_pages, $start+10);
-		
-		if($page > 1 && $num_pages > 1) {
-			$out[] = '<a class="navlink" href="?event='.$event.a.'step='.$step.a.'item='.urlencode(gps('item')).a.'page='.($page-1).'">'.gTxt('prev').'</a>';
-		}
-		else {
-			$out[] = '<span class="navlink-disabled">'.gTxt('prev').'</span>';
-		}
-		
-		for($pg = $start; $pg <= $end; $pg++) {
-			if($pg == $page) {
-				$out[] = '<span class="navlink-disabled">'.$pg.'</span>';
-			}
-			else {
-				$out[] = '<a class="navlink" href="?event='.$event.a.'step='.$step.a.'item='.urlencode(gps('item')).a.'page='.$pg.'">'.$pg.'</a>';
-			}
-		}
-		
-		if($page < $num_pages && $num_pages > 1) {
-			$out[] = '<a class="navlink" href="?event='.$event.a.'step='.$step.a.'item='.urlencode(gps('item')).a.'page='.($page+1).'">'.gTxt('next').'</a>';
-		}
-		
-		else {
-			$out[] = '<span class="navlink-disabled">'.gTxt('next').'</span>';
-		}
-		
-		return '<p class="prev-next">'.implode(n, $out).'</p>';
 	}
 }
 
