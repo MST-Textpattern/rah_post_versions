@@ -925,7 +925,7 @@ EOF;
 			return;
 		}
 		
-		$out[] = '<p>'.
+		$out[] = '<p class="information alert-block">'.
 			
 			gTxt(
 				'rah_post_versions_view_other_revisions',
