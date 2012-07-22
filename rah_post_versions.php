@@ -925,7 +925,7 @@ EOF;
 			return;
 		}
 		
-		$out[] = '<p class="information alert-block">'.
+		$out[] = '<p>'.
 			
 			gTxt(
 				'rah_post_versions_view_other_revisions',
@@ -999,7 +999,7 @@ EOF;
 					$out[] = 
 						'<p>'.txpspecialchars($key).'</p>'.n.
 						'<pre>'.
-							'<span class="rah_ui_del">'.
+							'<span class="error">'.
 								txpspecialchars($val).
 							'</span>'.
 						'</pre>'.n;
@@ -1212,12 +1212,12 @@ class rah_post_versions_diff {
 					!empty($line['d']) &&
 					($d = implode($this->delimiter,$line['d'])) !== ''
 				) {
-					$out[] = '<span class="rah_ui_del">'.$d.'</span>';
+					$out[] = '<span class="error">'.$d.'</span>';
 				}
 				
 				if(!empty($line['i'])) {
 					$out[] = 
-						'<span class="rah_ui_add">'.
+						'<span class="success">'.
 							implode($this->delimiter, $line['i']).
 						'</span>';
 				}
