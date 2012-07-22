@@ -969,7 +969,7 @@ EOF;
 		}
 		
 		$diff = new rah_post_versions_diff();
-			
+		
 		foreach($new['data'] as $key => $val) {
 				
 			if(!isset($old['data'][$key])) {
@@ -1004,10 +1004,15 @@ EOF;
 			}
 		}
 		
-		foreach($new['data'] as $key => $val) {
-			$out[] = 
-				'<p>'.txpspecialchars($key).'</p>'.n.
-				'<pre>'.txpspecialchars($val).'</pre>';
+		if($new['data']) {
+		
+			$out[] = '<h2>'.gTxt('rah_post_versions_unchanged').'</h2>';
+		
+			foreach($new['data'] as $key => $val) {
+				$out[] = 
+					'<p>'.txpspecialchars($key).'</p>'.n.
+					'<pre>'.txpspecialchars($val).'</pre>';
+			}
 		}
 		
 		$this->pane($out);
