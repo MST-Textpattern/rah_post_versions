@@ -15,7 +15,6 @@
 
 	if(@txpinterface == 'admin') {
 		rah_post_versions::install();
-		rah_post_versions::push();
 		add_privs('rah_post_versions', '1,2');
 		add_privs('rah_post_versions_delete_item', '1');
 		add_privs('rah_post_versions_delete_revision', '1');
@@ -26,6 +25,7 @@
 		register_callback(array('rah_post_versions', 'panes'), 'rah_post_versions');
 		register_callback(array('rah_post_versions', 'install'), 'plugin_lifecycle.rah_post_versions');
 		register_callback(array('rah_post_versions', 'prefs'), 'plugin_prefs.rah_post_versions');
+		new rah_post_versions_track();
 	}
 	
 	define('rah_post_versions_static_dir', true);
@@ -170,89 +170,6 @@ class rah_post_versions {
 			'<p>'.n.
 			'	<a href="?event=rah_post_versions">'.gTxt('continue').'</a>'.n.
 			'</p>';
-	}
-
-	/**
-	 * Picks changes from HTTP POST data.
-	 * @param string $callback Callback event the function was called on.
-	 * @return Nothing
-	 */
-
-	static public function push($callback=NULL) {
-		
-		global $txp_user, $event, $step, $prefs;
-		
-		$events = 'article:edit, article:create, article:publish, article:save, page:page_create, page:page_edit, page:page_save, form:form_create, form:form_edit, form:form_save, prefs:prefs_save, prefs:advanced_prefs_save, category:cat_article_create, category:cat_image_create, category:cat_file_create, category:cat_link_create, category:cat_article_save, category:cat_image_save, category:cat_file_save, category:cat_link_save, section:section_create, section:section_save, link:link_post, link:link_save, discuss:discuss_save, image:image_save, file:file_save, css:css_save';
-		
-		if($callback === NULL) {
-			
-			foreach(explode(',', $events) as $e) {
-				$e = do_list($e, ':');
-				register_callback(array('rah_post_versions', 'push'), $e[0], $e[1], 0);
-			}
-			
-			return;
-		}
-		
-		if(!isset($_POST) || !is_array($_POST) || empty($_POST))
-			return;
-		
-		$grid = ps('id') ? ps('id') : mysql_insert_id();
-		
-		switch($event) {
-			
-			case 'article':
-				$grid = ps('ID') ? ps('ID') : mysql_insert_id();
-				$title = ps('Title');
-			break;
-			
-			case 'category':
-				$title = gps("title");
-			break;
-			
-			case 'link':
-				$title = ps("linkname");
-			break;
-			
-			case 'prefs':
-				$grid = $title = ($step == 'advanced_prefs_save') ? 'Advanced prefs' : 'Preferences';
-			break;
-			
-			case 'discuss':
-				$grid = ps('discussid');
-				$title = ps("name");
-			break;
-			
-			case 'section':
-				$grid = ps('name');
-				$title = ps('title') ? ps('title') : ps('name');
-			break;
-			
-			case 'image':
-				$title = ps('name') ? ps('name') : $grid;
-			break;
-			
-			case 'file':
-				$grid = gps('id');
-				$title = gps('filename');
-			break;
-			
-			default:
-				$grid = $title = gps("name");
-		}
-		
-		if(!$grid || empty($title))
-			return;
-		
-		foreach($_POST as $key => $value) {
-			$data[$key] = ps($key);
-		}
-		
-		unset($data['_txp_token']);
-		
-		rah_post_versions::get()->create_revision(
-			$grid, $title, $txp_user, $event, $step, $data
-		);
 	}
 
 	/**
@@ -1248,6 +1165,61 @@ class rah_post_versions_diff {
 				)
 			)
 		;
+	}
+}
+
+/**
+ * Tracks data streams and changes
+ */
+
+class rah_post_versions_track {
+	
+	private $form = array();
+
+	/**
+	 * Constructor
+	 */
+
+	public function __construct() {
+
+		if(!empty($_POST)) {
+			$this->form = psa(array_keys($_POST));
+			unset($this->form['_txp_token']);
+		}
+
+		register_callback(array($this, 'push_article'), 'article_saved');
+		register_callback(array($this, 'push_article'), 'article_posted');
+		register_callback(array($this, 'push_named'), 'page');
+		register_callback(array($this, 'push_named'), 'form');
+		register_callback(array($this, 'push_named'), 'css');
+	}
+	
+	/**
+	 * Articles
+	 */
+	
+	public function push_article($e, $s, $r) {
+		global $txp_user, $ID, $event, $step;
+	
+		rah_post_versions::get()->create_revision(
+			$ID ? $ID : $r['ID'], $r['Title'], $txp_user, $event, $step, $r
+		);
+	}
+	
+	/**
+	 * Track posts
+	 */
+	
+	public function push_named() {
+		global $txp_user, $event, $step;
+		
+		if(!$this->form || !ps('name')) {
+			return;
+		}
+		
+		rah_post_versions::get()->create_revision(
+			ps('name'), ps('name'), $txp_user, $event, $step, $this->form
+		);
 	}
 }
 
