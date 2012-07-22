@@ -24,7 +24,6 @@
 		add_privs('plugin_prefs.rah_post_versions', '1,2');
 		register_tab('extensions','rah_post_versions', gTxt('rah_post_versions'));
 		register_callback(array('rah_post_versions', 'panes'), 'rah_post_versions');
-		register_callback(array('rah_post_versions', 'head'), 'admin_side', 'head_end');
 		register_callback(array('rah_post_versions', 'install'), 'plugin_lifecycle.rah_post_versions');
 		register_callback(array('rah_post_versions', 'prefs'), 'plugin_prefs.rah_post_versions');
 	}
@@ -186,50 +185,6 @@ class rah_post_versions {
 			'<p id="message">'.n.
 			'	<a href="?event=rah_post_versions">'.gTxt('continue').'</a>'.n.
 			'</p>';
-	}
-
-	/**
-	 * Adds the panel's CSS and JavaScript to the <head>.
-	 */
-
-	static public function head() {
-		global $event;
-
-		if($event != 'rah_post_versions')
-			return;
-
-		echo <<<EOF
-			<style type="text/css">
-				.rah_ui_add,
-				.rah_ui_del {
-					-moz-border-radius: 3px;
-					-webkit-border-radius: 3px;
-					-khtml-border-radius: 3px;
-					-o-border-radius: 3px;
-					-ms-border-radius: 3px;
-					border-radius: 3px;
-				}
-				.rah_ui_add,
-				.rah_ui_del {
-					-moz-box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-					-webkit-box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-					-khtml-box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-					-o-box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-					-ms-box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-					box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
-					color: #000;
-				}
-				.rah_ui_add {
-					background: #a7d726;
-					border: 1px solid #829b3e;
-				}
-				.rah_ui_del {
-					background: #c54e4e;
-					border: 1px solid #8b3e3e;
-				}
-			</style>
-
-EOF;
 	}
 
 	/**
