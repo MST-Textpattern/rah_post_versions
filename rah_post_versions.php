@@ -137,8 +137,6 @@ class rah_post_versions {
 			) PACK_KEYS=1 AUTO_INCREMENT=1 CHARSET=utf8"
 		);
 		
-		safe_delete('txp_prefs', "name in('rah_post_versions_exclude', 'rah_post_versions_events', 'rah_post_versions_hidden', 'rah_post_versions_ident')");
-		
 		$position = 250;
 		
 		foreach(
