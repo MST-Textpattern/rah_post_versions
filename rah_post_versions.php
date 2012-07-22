@@ -140,39 +140,29 @@ class rah_post_versions {
 			) PACK_KEYS=1 AUTO_INCREMENT=1 CHARSET=utf8"
 		);
 		
-		$options = array(
-			'gzip' => array('yesnoradio', 0),
-			'authors' => array('text_input', ''),
-			'repository_path' => array('text_input', ''),
-		);
-		
 		safe_delete('txp_prefs', "name in('rah_post_versions_exclude', 'rah_post_versions_events', 'rah_post_versions_hidden', 'rah_post_versions_ident')");
 		
 		$position = 250;
 		
-		foreach($options as $name => $value) {
-			$name = 'rah_post_versions_' . $name;
+		foreach(
+			array(
+				'gzip' => array('yesnoradio', 0),
+				'authors' => array('text_input', ''),
+				'repository_path' => array('text_input', ''),
+			) as $name => $val
+		) {
+			$n = __CLASS__.'_'.$name;
 			
-			if(!isset($prefs[$name])) {
-				safe_insert(
-					'txp_prefs',
-					"prefs_id=1,
-					name='".doSlash($name)."',
-					val='".doSlash($value[1])."',
-					type=1,
-					event='rah_postver',
-					html='".doSlash($value[0])."',
-					position=".$position
-				);
-				
-				$prefs[$name] = $value[1];
+			if(!isset($prefs[$n])) {
+				set_pref($n, $val[1], 'rah_postver', PREF_ADVANCED, $val[0], $position);
+				$prefs[$n] = $val[1];
 			}
 			
 			$position++;
 		}
 		
-		set_pref('rah_post_versions_version', self::$version, 'rah_postver', 2, '', 0);
-		$prefs['rah_post_versions_version'] = self::$version;
+		set_pref(__CLASS__.'_version', self::$version, 'rah_postver', 2, '', 0);
+		$prefs[__CLASS__.'_version'] = self::$version;
 	}
 
 	/**
