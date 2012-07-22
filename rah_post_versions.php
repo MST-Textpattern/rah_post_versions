@@ -965,48 +965,51 @@ EOF;
 			'</p>';
 		
 		if($old && $old['data'] === $new['data']) {
-			$out[] = '<p>'.gTxt('rah_post_versions_revisions_match').'</p>';
+			$out[] = '<p class="warning alert-block">'.gTxt('rah_post_versions_revisions_match').'</p>';
 		}
 		
-		else {
-		
-			$diff = new rah_post_versions_diff();
+		$diff = new rah_post_versions_diff();
 			
-			foreach($new['data'] as $key => $val) {
+		foreach($new['data'] as $key => $val) {
 				
-				if(!isset($old['data'][$key])) {
-					$old['data'][$key] = '';
-				}
+			if(!isset($old['data'][$key])) {
+				$old['data'][$key] = '';
+			}
 				
-				if($old['data'][$key] === $val) {
-					unset($old['data'][$key]);
-					continue;
-				}
+			if($old['data'][$key] === $val) {
+				unset($old['data'][$key]);
+				continue;
+			}
 	
-				$diff->old = $old['data'][$key];
-				$diff->new = $val;
+			$diff->old = $old['data'][$key];
+			$diff->new = $val;
+			
+			$out[] = 
+				'<p>'.txpspecialchars($key).'</p>'.n.
+				'<pre>'.$diff->html().'</pre>';
 				
+			unset($old['data'][$key], $new['data'][$key]);
+		}
+		
+		if(!empty($old['data']) && is_array($old['data'])) {
+		
+			foreach($old['data'] as $key => $val) {
 				$out[] = 
 					'<p>'.txpspecialchars($key).'</p>'.n.
-					'<pre>'.$diff->html().'</pre>';
-				
-				unset($old['data'][$key]);
-			}
-			
-			if($old !== false && !empty($old['data']) && is_array($old['data'])) {
-				
-				foreach($old['data'] as $key => $val) {
-					$out[] = 
-						'<p>'.txpspecialchars($key).'</p>'.n.
-						'<pre>'.
-							'<span class="error">'.
-								txpspecialchars($val).
-							'</span>'.
-						'</pre>'.n;
-				}
+					'<pre>'.
+						'<span class="error">'.
+							txpspecialchars($val).
+						'</span>'.
+					'</pre>'.n;
 			}
 		}
-	
+		
+		foreach($new['data'] as $key => $val) {
+			$out[] = 
+				'<p>'.txpspecialchars($key).'</p>'.n.
+				'<pre>'.txpspecialchars($val).'</pre>';
+		}
+		
 		$this->pane($out);
 	}
 	
