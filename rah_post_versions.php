@@ -182,7 +182,7 @@ class rah_post_versions {
 	static public function prefs() {
 		header('Location: ?event=rah_post_versions');
 		echo 
-			'<p id="message">'.n.
+			'<p>'.n.
 			'	<a href="?event=rah_post_versions">'.gTxt('continue').'</a>'.n.
 			'</p>';
 	}
