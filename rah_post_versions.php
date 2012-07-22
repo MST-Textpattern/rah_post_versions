@@ -104,10 +104,7 @@ class rah_post_versions {
 			return;
 		}
 		
-		$current = isset($prefs['rah_post_versions_version']) ? 
-			(string) $prefs['rah_post_versions_version'] : 'base';
-			
-		if(self::$version === $current)
+		if((string) get_pref(__CLASS__.'_version') === self::$version)
 			return;
 		
 		safe_query(
