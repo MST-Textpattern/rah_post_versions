@@ -215,6 +215,7 @@ class rah_post_versions {
 				'changes' => false,
 				'diff' => false,
 				'multi_edit' => true,
+				'revert' => true,
 			);
 
 		if(!$step || !bouncer($step, $steps)) {
@@ -873,6 +874,13 @@ class rah_post_versions {
 		}
 		
 		$this->pane($out);
+	}
+	
+	/**
+	 * Revert to revision
+	 */
+	
+	public function revert() {
 	}
 	
 	/**
