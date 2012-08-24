@@ -1210,7 +1210,7 @@ class rah_post_versions_track {
 		global $txp_user, $event, $step;
 	
 		rah_post_versions::get()->create_revision(
-			$r['ID'], $r['Title'], $txp_user, $event, $step, $r
+			$r['ID'], $r['Title'], $txp_user, $event, $step, $this->form
 		);
 	}
 	
