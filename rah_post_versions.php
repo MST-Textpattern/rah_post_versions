@@ -1207,10 +1207,10 @@ class rah_post_versions_track {
 	 */
 	
 	public function push_article($e, $s, $r) {
-		global $txp_user, $ID, $event, $step;
+		global $txp_user, $event, $step;
 	
 		rah_post_versions::get()->create_revision(
-			$ID ? $ID : $r['ID'], $r['Title'], $txp_user, $event, $step, $r
+			$r['ID'], $r['Title'], $txp_user, $event, $step, $r
 		);
 	}
 	
