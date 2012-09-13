@@ -1021,12 +1021,16 @@ class rah_post_versions {
 		}
 		
 		for($pg = $start; $pg <= $end; $pg++) {
+			
 			if($pg == $page) {
-				$out[] = '<span class="navlink-disabled">'.$pg.'</span>';
+				$class = 'navlink-active';
 			}
+			
 			else {
-				$out[] = '<a class="navlink" href="?event='.$event.a.'step='.$step.a.'item='.urlencode(gps('item')).a.'page='.$pg.'">'.$pg.'</a>';
+				$class = 'navlink';
 			}
+			
+			$out[] = '<a class="'.$class.'" href="?event='.$event.a.'step='.$step.a.'item='.urlencode(gps('item')).a.'page='.$pg.'">'.$pg.'</a>';
 		}
 		
 		if($page < $num_pages && $num_pages > 1) {
@@ -1037,7 +1041,7 @@ class rah_post_versions {
 			$out[] = '<span class="navlink-disabled">'.gTxt('next').'</span>';
 		}
 		
-		return '<p class="prev-next">'.implode(n, $out).'</p>';
+		return '<p class="nav-tertiary">'.implode('', $out).'</p>';
 	}
 }
 
