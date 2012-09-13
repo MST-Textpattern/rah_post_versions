@@ -1040,7 +1040,6 @@ class rah_post_versions {
 		if($page < $num_pages && $num_pages > 1) {
 			$out[] = '<a class="navlink" href="?event='.$event.a.'step='.$step.a.'item='.urlencode(gps('item')).a.'page='.($page+1).'">'.gTxt('next').'</a>';
 		}
-		
 		else {
 			$out[] = '<span class="navlink-disabled">'.gTxt('next').'</span>';
 		}
