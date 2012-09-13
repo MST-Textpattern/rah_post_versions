@@ -881,6 +881,14 @@ class rah_post_versions {
 	 */
 	
 	public function revert() {
+		
+		extract(gpsa(array(
+			'revert',
+		)));
+
+		$data = $this->get_revision("id='".doSlash($revert)."'");
+		callback_event('rah_post_versions.revert', '', 0, $data);
+		$this->diff();
 	}
 	
 	/**
