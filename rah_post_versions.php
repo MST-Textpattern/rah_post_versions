@@ -955,7 +955,7 @@ class rah_post_versions {
 	protected function multi_option_delete_revision() {
 		
 		$selected = ps('selected');
-		$in = implode(',',quote_list($selected));
+		$in = implode(',', quote_list($selected));
 		$setid = (int) ps('item');
 		
 		if(
@@ -1157,8 +1157,9 @@ class rah_post_versions_diff {
 			}
 		}
 
-		if($maxlen == 0)
+		if($maxlen == 0) {
 			return array(array('d' => $old, 'i' => $new));
+		}
 		
 		return 
 			array_merge(
