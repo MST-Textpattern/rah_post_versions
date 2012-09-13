@@ -757,6 +757,7 @@ class rah_post_versions {
 		extract(gpsa(array(
 			'r',
 			'item',
+			'plain',
 		)));
 		
 		$new = $old = NULL;
@@ -826,50 +827,77 @@ class rah_post_versions {
 			$out[] = '<p class="warning alert-block">'.gTxt('rah_post_versions_revisions_match').'</p>';
 		}
 		
-		$diff = new rah_post_versions_diff();
-		
-		foreach($new['data'] as $key => $val) {
-				
-			if(!isset($old['data'][$key])) {
-				$old['data'][$key] = '';
-			}
-				
-			if($old['data'][$key] === $val) {
-				unset($old['data'][$key]);
-				continue;
-			}
-	
-			$diff->old = $old['data'][$key];
-			$diff->new = $val;
-			
-			$out[] = 
-				'<p>'.txpspecialchars($key).'</p>'.n.
-				'<pre>'.$diff->html().'</pre>';
-				
-			unset($old['data'][$key], $new['data'][$key]);
-		}
-		
-		if(!empty($old['data']) && is_array($old['data'])) {
-		
-			foreach($old['data'] as $key => $val) {
-				$out[] = 
-					'<p>'.txpspecialchars($key).'</p>'.n.
-					'<pre>'.
-						'<span class="error">'.
-							txpspecialchars($val).
-						'</span>'.
-					'</pre>'.n;
-			}
-		}
-		
-		if($new['data']) {
-		
-			$out[] = '<h2>'.gTxt('rah_post_versions_unchanged').'</h2>';
+		if($plain) {
+			$out[] = '<h2>r'.$new['id'].'</h2>';
 		
 			foreach($new['data'] as $key => $val) {
+				if($val !== '') {
+					$out[] = 
+						'<p>'.txpspecialchars($key).'</p>'.n.
+						'<pre>'.txpspecialchars($val).'</pre>';
+				}
+			}
+			
+			if(!empty($old['data'])) {
+				$out[] = '<h2>r'.$old['id'].'</h2>';
+			
+				foreach($old['data'] as $key => $val) {
+					if($val !== '') {
+						$out[] = 
+							'<p>'.txpspecialchars($key).'</p>'.n.
+							'<pre>'.txpspecialchars($val).'</pre>';
+					}
+				}
+			}
+		}
+		
+		else {
+		
+			$diff = new rah_post_versions_diff();
+			
+			foreach($new['data'] as $key => $val) {
+					
+				if(!isset($old['data'][$key])) {
+					$old['data'][$key] = '';
+				}
+					
+				if($old['data'][$key] === $val) {
+					unset($old['data'][$key]);
+					continue;
+				}
+		
+				$diff->old = $old['data'][$key];
+				$diff->new = $val;
+				
 				$out[] = 
 					'<p>'.txpspecialchars($key).'</p>'.n.
-					'<pre>'.txpspecialchars($val).'</pre>';
+					'<pre>'.$diff->html().'</pre>';
+					
+				unset($old['data'][$key], $new['data'][$key]);
+			}
+			
+			if(!empty($old['data']) && is_array($old['data'])) {
+			
+				foreach($old['data'] as $key => $val) {
+					$out[] = 
+						'<p>'.txpspecialchars($key).'</p>'.n.
+						'<pre>'.
+							'<span class="error">'.
+								txpspecialchars($val).
+							'</span>'.
+						'</pre>'.n;
+				}
+			}
+			
+			if($new['data']) {
+			
+				$out[] = '<h2>'.gTxt('rah_post_versions_unchanged').'</h2>';
+			
+				foreach($new['data'] as $key => $val) {
+					$out[] = 
+						'<p>'.txpspecialchars($key).'</p>'.n.
+						'<pre>'.txpspecialchars($val).'</pre>';
+				}
 			}
 		}
 		
