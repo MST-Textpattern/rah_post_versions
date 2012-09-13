@@ -1010,6 +1010,10 @@ class rah_post_versions {
 	
 		list($page, $offset, $num_pages) = pager($total, $limit, gps('page'));
 		
+		if($num_pages <= 1) {
+			return;
+		}
+		
 		$start = max(1, $page-5);
 		$end = min($num_pages, $start+10);
 		
