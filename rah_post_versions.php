@@ -888,17 +888,6 @@ class rah_post_versions {
 						'</pre>'.n;
 				}
 			}
-			
-			if($new['data']) {
-			
-				$out[] = '<h2>'.gTxt('rah_post_versions_unchanged').'</h2>';
-			
-				foreach($new['data'] as $key => $val) {
-					$out[] = 
-						'<p>'.txpspecialchars($key).'</p>'.n.
-						'<pre>'.txpspecialchars($val).'</pre>';
-				}
-			}
 		}
 		
 		$this->pane($out);
