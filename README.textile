@@ -108,10 +108,8 @@ h3. Hooking and callbacks
 
 p. Other way of extending plugin's functionality and possibilities are the hooks. The callback functionality uses Textpattern 4.x's regular way of handling callbacks, the same stuff used in "Pluggable UI and other callback registering":http://textpattern.net/wiki/index.php?title=Plugin_Development_Guidelines#Callbacks. Rah_post_version's callbacks are as follows.
 
-p. *event: rah_post_versions.revision_created*
+p. *rah_post_versions.revision_created*
 Is called when a new revision is successfully created. Revision data is passed to the hooked function. The revision data is the same array map as passed to the "rah_post_version::create_revision":#rah_post_versions-create_revision method.
-
-p. *event: rah_post_versions_tasks, step: messager_called* is called when messager is run. Messagaer is run after a item has potentially been reverted to older revision (note: messager doesn't know if reverting was successful or if it was actually even done. It only knows that "hey someone called me").
 
 h2. Limitations
 
