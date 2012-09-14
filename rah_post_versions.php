@@ -394,7 +394,7 @@ class rah_post_versions {
 			}
 		}
 
-		callback_event('rah_post_versions.revision_created', $data);
+		callback_event('rah_post_versions.revision_created', '', 0, $data);
 		return true;
 	}
 
