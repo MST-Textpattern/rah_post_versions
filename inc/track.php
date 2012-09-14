@@ -47,7 +47,7 @@ class rah_post_versions_track {
 		global $txp_user, $event, $step;
 	
 		rah_post_versions::get()->create_revision(
-			$r['ID'], $r['Title'], $txp_user, $event, $step, $this->form
+			(string) $r['ID'], (string) $r['Title'], $txp_user, $event, $step, $this->form
 		);
 	}
 	
@@ -63,7 +63,7 @@ class rah_post_versions_track {
 		}
 		
 		rah_post_versions::get()->create_revision(
-			ps('name'), ps('name'), $txp_user, $event, $step, $this->form
+			(string) ps('name'), (string) ps('name'), $txp_user, $event, $step, $this->form
 		);
 	}
 	
@@ -80,7 +80,7 @@ class rah_post_versions_track {
 		}
 		
 		rah_post_versions::get()->create_revision(
-			ps('id'), ps('linkname'), $txp_user, $event, $step, $this->form
+			(string) ps('id'), (string) ps('linkname'), $txp_user, $event, $step, $this->form
 		);
 	}
 }
