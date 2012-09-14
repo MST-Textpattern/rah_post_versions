@@ -13,26 +13,7 @@
  * http://www.gnu.org/licenses/gpl-2.0.html
  */
 
-	if(@txpinterface == 'admin') {
-		rah_post_versions::install();
-		add_privs('rah_post_versions', '1,2');
-		add_privs('rah_post_versions_delete_item', '1');
-		add_privs('rah_post_versions_delete_revision', '1');
-		add_privs('rah_post_versions_diff', '1,2');
-		add_privs('rah_post_versions_preferences', '1');
-		add_privs('plugin_prefs.rah_post_versions', '1,2');
-		register_tab('extensions','rah_post_versions', gTxt('rah_post_versions'));
-		register_callback(array('rah_post_versions', 'panes'), 'rah_post_versions');
-		register_callback(array('rah_post_versions', 'install'), 'plugin_lifecycle.rah_post_versions');
-		register_callback(array('rah_post_versions', 'prefs'), 'plugin_prefs.rah_post_versions');
-		new rah_post_versions_track();
-	}
-	
-	define('rah_post_versions_static_dir', true);
-
-/**
- * Main class
- */
+	rah_post_versions::get();
 
 class rah_post_versions {
 
@@ -164,7 +145,7 @@ class rah_post_versions {
 	 * Redirects to the plugin's admin-side panel
 	 */
 
-	static public function prefs() {
+	public function prefs() {
 		header('Location: ?event=rah_post_versions');
 		echo 
 			'<p>'.n.
@@ -177,12 +158,38 @@ class rah_post_versions {
 	 */
 
 	public function __construct() {
+		
+		add_privs('rah_post_versions', '1,2');
+		add_privs('rah_post_versions_delete_item', '1');
+		add_privs('rah_post_versions_delete_revision', '1');
+		add_privs('rah_post_versions_diff', '1,2');
+		add_privs('rah_post_versions_preferences', '1');
+		add_privs('plugin_prefs.rah_post_versions', '1,2');
+		
+		register_callback(array(__CLASS__, 'install'), 'plugin_lifecycle.rah_post_versions');
+		register_callback(array($this, 'panes'), 'rah_post_versions');
+		register_callback(array($this, 'prefs'), 'plugin_prefs.rah_post_versions');
+		register_tab('extensions','rah_post_versions', gTxt('rah_post_versions'));
+		
+		$this->initialize();
+		new rah_post_versions_track();
+	}
+	
+	/**
+	 * Initialize
+	 */
+	
+	public function initialize() {
 		global $prefs;
+	
+		if(!defined('rah_post_versions_static_dir')) {
+			define('rah_post_versions_static_dir', true);
+		}
 		
 		if($prefs['rah_post_versions_gzip'] && function_exists('gzencode') && function_exists('gzinflate')) {
 			$this->compress = true;
 		}
-	
+		
 		$this->go_static();
 	}
 	
@@ -204,7 +211,7 @@ class rah_post_versions {
 	 * Shows requested admin-side page
 	 */
 
-	static public function panes() {
+	public function panes() {
 		require_privs('rah_post_versions');
 
 		global $step;
@@ -222,7 +229,7 @@ class rah_post_versions {
 			$step = 'browser';
 		}
 		
-		self::get()->$step();
+		$this->$step();
 	}
 
 	/**
