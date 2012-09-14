@@ -35,6 +35,7 @@ class rah_post_versions_track {
 		register_callback(array($this, 'push_named'), 'page');
 		register_callback(array($this, 'push_named'), 'form');
 		register_callback(array($this, 'push_named'), 'css');
+		register_callback(array($this, 'push_link'), 'link');
 	}
 	
 	/**
@@ -62,6 +63,23 @@ class rah_post_versions_track {
 		
 		rah_post_versions::get()->create_revision(
 			ps('name'), ps('name'), $txp_user, $event, $step, $this->form
+		);
+	}
+	
+	/**
+	 * Tracks link saving
+	 */
+	
+	public function push_link() {
+	
+		global $txp_user, $event, $step, $ID;
+		
+		if(!$this->form || !ps('id')) {
+			return;
+		}
+		
+		rah_post_versions::get()->create_revision(
+			ps('id'), ps('linkname'), $txp_user, $event, $step, $this->form
 		);
 	}
 }
