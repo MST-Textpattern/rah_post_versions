@@ -35,6 +35,7 @@ class rah_post_versions_track {
 		register_callback(array($this, 'push_named'), 'page');
 		register_callback(array($this, 'push_named'), 'form');
 		register_callback(array($this, 'push_named'), 'css');
+		register_callback(array($this, 'push_named'), 'section');
 		register_callback(array($this, 'push_link'), 'link');
 	}
 	
