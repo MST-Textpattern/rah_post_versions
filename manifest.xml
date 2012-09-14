@@ -13,5 +13,6 @@
 	<flags>3</flags>
 	
 	<help file="./README.textile" />
+	<code file="./rah_post_versions.php, ./inc/diff.php, ./inc/track.php" />
 
 </manifest>
