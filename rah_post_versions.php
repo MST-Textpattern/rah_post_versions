@@ -314,7 +314,7 @@ class rah_post_versions {
 		
 		global $prefs;
 		
-		if($this->nowrite) {
+		if($this->nowrite || !$grid || !$event || !$step) {
 			return false;
 		}
 		
