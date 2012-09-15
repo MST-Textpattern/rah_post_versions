@@ -49,7 +49,7 @@ class rah_post_versions_diff {
 	protected function lines($string) {
 		
 		if(is_array($string)) {
-			$string = implode(n, $string);
+			$string = json_encode($string);
 		}
 		
 		return 	
