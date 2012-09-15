@@ -37,6 +37,7 @@ class rah_post_versions_track {
 		register_callback(array($this, 'push_named'), 'css');
 		register_callback(array($this, 'push_named'), 'section');
 		register_callback(array($this, 'push_link'), 'link');
+		register_callback(array($this, 'push_multi_edit'), 'list');
 	}
 	
 	/**
@@ -82,6 +83,26 @@ class rah_post_versions_track {
 		rah_post_versions::get()->create_revision(
 			(string) ps('id'), (string) ps('linkname'), $txp_user, $event, $step, $this->form
 		);
+	}
+	
+	/**
+	 * Multi-edit tracking
+	 */
+	
+	public function push_multi_edit() {
+		
+		global $txp_user, $event, $step, $ID;
+		
+		if(!$this->form || !ps('edit_method') || !ps('selected') || !is_array(ps('selected'))) {
+			return;
+		}
+		
+		foreach(ps('selected') as $id) {
+			rah_post_versions::get()->create_revision(
+				(string) $id, '', $txp_user, $event, ps('edit_method'), $this->form
+			);
+		}
+		
 	}
 }
 
