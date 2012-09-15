@@ -358,7 +358,7 @@ class rah_post_versions {
 			if(
 				safe_update(
 					'rah_post_versions_sets',
-					'modified=now(), changes=changes+1, '.$sql['title'],
+					'modified=now(), changes=changes+1 '.($title ? ','.$sql['title'] : '' ),
 					"id='".doSlash($setid)."'"
 				) == false
 			) {
