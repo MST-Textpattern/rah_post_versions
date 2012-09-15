@@ -124,7 +124,6 @@ class rah_post_versions {
 		foreach(
 			array(
 				'gzip' => array('yesnoradio', 0),
-				'authors' => array('text_input', ''),
 				'repository_path' => array('text_input', ''),
 			) as $name => $val
 		) {
