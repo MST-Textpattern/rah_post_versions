@@ -322,6 +322,10 @@ class rah_post_versions {
 			$sql[$name] = $name."='".doSlash($$name)."'";
 		}
 		
+		if($title === '') {
+			$sql['title'] = "title='".doSlash($grid)."'";
+		}
+		
 		$sql['posted'] = 'posted=now()';
 		
 		$setid = 
