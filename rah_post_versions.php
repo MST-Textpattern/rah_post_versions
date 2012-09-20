@@ -131,14 +131,12 @@ class rah_post_versions {
 			
 			if(!isset($prefs[$n])) {
 				set_pref($n, $val[1], 'rah_postver', PREF_ADVANCED, $val[0], $position);
-				$prefs[$n] = $val[1];
 			}
 			
 			$position++;
 		}
 		
-		set_pref(__CLASS__.'_version', self::$version, 'rah_postver', 2, '', 0);
-		$prefs[__CLASS__.'_version'] = self::$version;
+		set_pref(__CLASS__.'_version', self::$version, 'rah_postver', PREF_HIDDEN);
 	}
 
 	/**
