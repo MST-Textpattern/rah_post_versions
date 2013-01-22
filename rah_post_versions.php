@@ -187,7 +187,7 @@ class rah_post_versions
 		add_privs('rah_post_versions_diff', '1,2');
 		add_privs('rah_post_versions_preferences', '1');
 		add_privs('plugin_prefs.rah_post_versions', '1,2');
-		add_privs('prefs.rah_post_versions', '1');
+		add_privs('prefs.rah_postver', '1');
 
 		register_callback(array(__CLASS__, 'install'), 'plugin_lifecycle.rah_post_versions');
 		register_callback(array($this, 'panes'), 'rah_post_versions');
