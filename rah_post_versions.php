@@ -104,7 +104,7 @@ class rah_post_versions
 			return;
 		}
 
-		if ((string) get_pref(__CLASS__.'_version') === self::$version)
+		if ((string) get_pref('rah_post_versions_version') === self::$version)
 		{
 			return;
 		}
@@ -148,7 +148,7 @@ class rah_post_versions
 			) as $name => $val
 		)
 		{
-			$n = __CLASS__.'_'.$name;
+			$n = 'rah_post_versions_'.$name;
 
 			if (!isset($prefs[$n]))
 			{
@@ -158,7 +158,7 @@ class rah_post_versions
 			$position++;
 		}
 
-		set_pref(__CLASS__.'_version', self::$version, 'rah_postver', PREF_HIDDEN);
+		set_pref('rah_post_versions_version', self::$version, 'rah_postver', PREF_HIDDEN);
 	}
 
 	/**
