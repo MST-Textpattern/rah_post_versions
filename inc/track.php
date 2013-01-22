@@ -3,12 +3,12 @@
 /**
  * Tracks changes and creates revisions
  *
- * @author Jukka Svahn
- * @date 2010-
+ * @author  Jukka Svahn
+ * @date    2010-
  * @license GNU GPLv2
- * @link http://rahforum.biz/plugins/rah_post_versions
+ * @link    http://rahforum.biz/plugins/rah_post_versions
  *
- * Copyright (C) 2012 Jukka Svahn <http://rahforum.biz>
+ * Copyright (C) 2012 Jukka Svahn http://rahforum.biz
  * Licensed under GNU Genral Public License version 2
  * http://www.gnu.org/licenses/gpl-2.0.html
  */
