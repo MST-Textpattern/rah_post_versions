@@ -1,0 +1,12 @@
+{
+	"name"        : "rah_post_versions",
+	"description" : "Revision control",
+	"version"     : "0.9",
+	"type"        : 5,
+	"author"      : "Jukka Svahn",
+	"author_uri"  : "http://rahforum.biz",
+	"order"       : 5,
+	"flags"       : 3,
+	"help"        : {"file" : "./README.textile"},
+	"code"        : {"file" : ["./rah_post_versions.php", "./inc/diff.php", "./inc/track.php"]}
+}
