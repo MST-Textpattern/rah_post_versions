@@ -60,7 +60,8 @@ class rah_post_versions {
 	protected $compress = false;
 
 	/**
-	 * Installer
+	 * Installer.
+	 *
 	 * @param string $event
 	 * @param string $step
 	 */
