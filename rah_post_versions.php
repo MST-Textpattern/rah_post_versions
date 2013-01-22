@@ -1,60 +1,78 @@
 <?php
 
 /**
- * Rah_post_versions plugin for Textpattern CMS
+ * Rah_post_versions plugin for Textpattern CMS.
  *
- * @author Jukka Svahn
- * @date 2010-
+ * @author  Jukka Svahn
+ * @date    2010-
  * @license GNU GPLv2
- * @link http://rahforum.biz/plugins/rah_post_versions
+ * @link    http://rahforum.biz/plugins/rah_post_versions
  *
- * Copyright (C) 2012 Jukka Svahn <http://rahforum.biz>
+ * Copyright (C) 2012 Jukka Svahn http://rahforum.biz
  * Licensed under GNU Genral Public License version 2
  * http://www.gnu.org/licenses/gpl-2.0.html
  */
 
 	rah_post_versions::get();
 
+/**
+ * The plugin class.
+ */
+
 class rah_post_versions
 {
 	/**
-	 * @var string Version number
+	 * Version number.
+	 *
+	 * @var string
 	 */
 
 	static public $version = '1.0';
 
 	/**
-	 * @var obj Stores instances
+	 * Stores instances.
+	 *
+	 * @var rah_post_versions
 	 */
 
 	static public $instance = NULL;
 
 	/**
-	 * @var array List of event labels
+	 * List of event labels.
+	 *
+	 * @var array
 	 */
 
 	protected $events = array();
 
 	/**
-	 * @var string Path to repository
+	 * Path to repository.
+	 *
+	 * @var string
 	 */
 
 	protected $static_dir = false;
 
 	/**
-	 * @var string Static heading
+	 * Static heading.
+	 *
+	 * @var string
 	 */
 
 	protected $static_header = '';
 
 	/**
-	 * @var bool Write status
+	 * Write status.
+	 *
+	 * @var bool
 	 */
 
 	protected $nowrite = false;
 
 	/**
-	 * @var bool Compress or not
+	 * Compress or not.
+	 *
+	 * @var bool
 	 */
 
 	protected $compress = false;
@@ -62,8 +80,8 @@ class rah_post_versions
 	/**
 	 * Installer.
 	 *
-	 * @param string $event
-	 * @param string $step
+	 * @param string $event Plugin-lifecycle event
+	 * @param string $step  Plugin-lifecycle step
 	 */
 
 	static public function install($event = '', $step = '')
@@ -144,7 +162,7 @@ class rah_post_versions
 	}
 
 	/**
-	 * Redirects to the plugin's admin-side panel
+	 * Redirects to the plugin's admin-side panel.
 	 */
 
 	public function prefs()
@@ -158,7 +176,7 @@ class rah_post_versions
 	}
 
 	/**
-	 * Initialize required objects
+	 * Constructor.
 	 */
 
 	public function __construct()
@@ -180,7 +198,7 @@ class rah_post_versions
 	}
 
 	/**
-	 * Initialize
+	 * Initializes.
 	 */
 
 	public function initialize()
@@ -201,8 +219,9 @@ class rah_post_versions
 	}
 
 	/**
-	 * Gets an instance
-	 * @return obj
+	 * Gets an instance.
+	 *
+	 * @return rah_post_versions
 	 */
 
 	static public function get()
@@ -216,7 +235,7 @@ class rah_post_versions
 	}
 
 	/**
-	 * Shows requested admin-side page
+	 * Shows requested admin-side page.
 	 */
 
 	public function panes()
@@ -242,7 +261,8 @@ class rah_post_versions
 	}
 
 	/**
-	 * Lists event names and labels
+	 * Lists admin-side event names and labels.
+	 *
 	 * @return array
 	 */
 
@@ -265,8 +285,9 @@ class rah_post_versions
 	}
 
 	/**
-	 * Get revision from database
-	 * @param string $where SQL where statement
+	 * Get a revision from the database.
+	 *
+	 * @param  string $where SQL where clause
 	 * @return array
 	 */
 
@@ -319,14 +340,15 @@ class rah_post_versions
 	}
 
 	/**
-	 * Creates a new revision
-	 * @param mixed $grid
-	 * @param string $title
-	 * @param string $author
-	 * @param string $event
-	 * @param string $step
-	 * @param array $data
-	 * @return bool
+	 * Creates a new revision.
+	 *
+	 * @param  string $grid   Group identifier
+	 * @param  string $title  The title
+	 * @param  string $author The author
+	 * @param  string $event  The event
+	 * @param  string $step   The step
+	 * @param  array  $data   The revision data
+	 * @return bool   FALSE on failure
 	 */
 
 	public function create_revision($grid, $title, $author, $event, $step, $data)
@@ -437,8 +459,9 @@ class rah_post_versions
 	}
 
 	/**
-	 * Exports revision data to static files
-	 * @return bool FALSE on error, TRUE on success. Nothing when export isn't required.
+	 * Exports revision data from the database to static files.
+	 *
+	 * @return bool|null FALSE on error, TRUE on success. NULL when export isn't required.
 	 */
 
 	protected function go_static()
@@ -511,7 +534,9 @@ class rah_post_versions
 	}
 
 	/**
-	 * Lists all items
+	 * Lists all items.
+	 *
+	 * @param string|array $message The activity message
 	 */
 
 	public function browser($message = '')
@@ -644,9 +669,10 @@ class rah_post_versions
 	}
 
 	/**
-	 * Echoes the panels and header
-	 * @param string $content Pane's HTML markup.
-	 * @param string $message The activity message.
+	 * Outputs a panel.
+	 *
+	 * @param string       $content Pane's HTML markup
+	 * @param string|array $message The activity message
 	 */
 
 	private function pane($content, $message = '')
@@ -673,7 +699,9 @@ class rah_post_versions
 	}
 
 	/**
-	 * Lists changes committed to an item
+	 * Lists changes committed to an item.
+	 *
+	 * @param string|array $message The activity message
 	 */
 
 	protected function changes($message = '')
@@ -818,7 +846,7 @@ class rah_post_versions
 	}
 
 	/**
-	 * Shows differences between two revisions
+	 * Shows differences between two revisions.
 	 */
 
 	public function diff()
@@ -977,7 +1005,7 @@ class rah_post_versions
 	}
 
 	/**
-	 * Revert to revision
+	 * Reverts to revision.
 	 */
 
 	public function revert()
@@ -992,7 +1020,7 @@ class rah_post_versions
 	}
 
 	/**
-	 * Handles multi-edit methods
+	 * Handles multi-edit methods.
 	 */
 
 	public function multi_edit()
@@ -1021,7 +1049,7 @@ class rah_post_versions
 	}
 
 	/**
-	 * Removes items and their all revisions
+	 * Removes items and all their revisions.
 	 */
 
 	protected function multi_option_delete_item()
@@ -1063,7 +1091,7 @@ class rah_post_versions
 	}
 
 	/**
-	 * Deletes individual revisions
+	 * Removes individual revisions.
 	 */
 
 	protected function multi_option_delete_revision()
@@ -1096,9 +1124,9 @@ class rah_post_versions
 	}
 
 	/**
-	 * Shows diffs
+	 * Shows diffs.
 	 */
-	
+
 	protected function multi_option_diff()
 	{
 		$selected = ps('selected');
@@ -1116,10 +1144,11 @@ class rah_post_versions
 	}
 
 	/**
-	 * Generates pagination
-	 * @param string $step
-	 * @param int $total
-	 * @param int $limit
+	 * Generates pagination.
+	 *
+	 * @param  string $step  The step
+	 * @param  int    $total Total items  
+	 * @param  int    $limit The limit
 	 * @return string HTML
 	 */
 
