@@ -1,107 +1,123 @@
 <?php
 
 /**
- * Generates HTML inline diffs, a comparison tool. Uses Paul Butler's Simple Diff Algorithm.
+ * Generates HTML inline diffs, a comparison tool.
+ *
+ * Uses Paul Butler's Simple Diff Algorithm.
  *
  * @package rah_post_versions
- * @author Jukka Svahn
- * @date 2010-
+ * @author  Jukka Svahn
+ * @date    2010-
  * @license GNU GPLv2
- * @link http://rahforum.biz/plugins/rah_post_versions
+ * @link    http://rahforum.biz/plugins/rah_post_versions
  *
- * Copyright (C) 2012 Jukka Svahn <http://rahforum.biz>
+ * Copyright (C) 2012 Jukka Svahn http://rahforum.biz
  * Licensed under GNU Genral Public License version 2
  * http://www.gnu.org/licenses/gpl-2.0.html
  *
  * The diff generator uses Paul Butler's Simple Diff Algorithm.
  *
- * @author Paul Butler
+ * @author  Paul Butler
  * @license zlib/libpng
- * @link http://www.paulbutler.org
- * @link https://github.com/paulgb/simplediff
+ * @link    http://www.paulbutler.org
+ * @link    https://github.com/paulgb/simplediff
  */
 
-class rah_post_versions_diff {
-
+class rah_post_versions_diff
+{
 	/**
-	 * @var string Old value.
+	 * Old value.
+	 *
+	 * @var string
 	 */
 
 	public $old;
-	
+
 	/**
-	 * @var string New value.
+	 * New value.
+	 *
+	 * @var string
 	 */
-	
+
 	public $new;
-	
+
 	/**
-	 * @var string Line delimiter
+	 * Line delimiter.
+	 *
+	 * @var string
 	 */
-	
+
 	protected $delimiter = n;
 
 	/**
 	 * Clean line breaks.
-	 * @param string|array $string
+	 *
+	 * @param  string|array $string
+	 * @return array
 	 */
 
-	protected function lines($string) {
-		
-		if(is_array($string)) {
+	protected function lines($string)
+	{
+		if (is_array($string))
+		{
 			$string = json_encode($string);
 		}
-		
-		return 	
-			explode($this->delimiter,
-				str_replace(array("\r\n","\r"), n, htmlspecialchars($string))
-			);
+
+		return 	explode($this->delimiter,
+			str_replace(array("\r\n","\r"), n, htmlspecialchars($string))
+		);
 	}
 
 	/**
 	 * Returns HTML presentation of the diff.
+	 *
 	 * @return string HTML markup.
 	 */
 
-	public function html(){
-		
+	public function html()
+	{	
 		$this->old = $this->lines($this->old);
 		$this->new = $this->lines($this->new);
-		
-		foreach($this->diff($this->old, $this->new) as $key => $line){
-			if(is_array($line)) {
-				
-				if(
+
+		foreach ($this->diff($this->old, $this->new) as $key => $line)
+		{
+			if (is_array($line))
+			{
+				if (
 					!empty($line['d']) &&
 					($d = implode($this->delimiter,$line['d'])) !== ''
-				) {
+				)
+				{
 					$out[] = '<span class="error">'.$d.'</span>';
 				}
-				
-				if(!empty($line['i'])) {
+
+				if (!empty($line['i']))
+				{
 					$out[] = 
 						'<span class="success">'.
 							implode($this->delimiter, $line['i']).
 						'</span>';
 				}
 			}
-			else {
+			else
+			{
 				$out[] = $line;
 			}
 		}
-		
+
 		return implode($this->delimiter, $out);
 	}
 
 	/**
-	 * Compares lines/words and retuns differences marked
-	 * @param array $old Contents of old revision.
-	 * @param array $new Contents of new revision.
+	 * Compares lines/words and retuns differences marked.
+	 *
+	 * @param  array $old Contents of old revision.
+	 * @param  array $new Contents of new revision.
 	 * @return array
 	 */
 
-	public function diff($old, $new){
-
+	public function diff($old, $new)
+	{
 		/*
 			This (rah_post_versions_diff::diff()) methods's contents are based on:
 			
@@ -131,15 +147,18 @@ class rah_post_versions_diff {
 
 		$maxlen = 0;
 
-		foreach($old as $oindex => $ovalue){
+		foreach ($old as $oindex => $ovalue)
+		{
 			$nkeys = array_keys($new, $ovalue);
-			
-			foreach($nkeys as $nindex) {
+
+			foreach ($nkeys as $nindex)
+			{
 				$matrix[$oindex][$nindex] = 
 					isset($matrix[$oindex - 1][$nindex - 1]) ? 
 						$matrix[$oindex - 1][$nindex - 1] + 1 : 1;
-				
-				if($matrix[$oindex][$nindex] > $maxlen) {
+
+				if ($matrix[$oindex][$nindex] > $maxlen)
+				{
 					$maxlen = $matrix[$oindex][$nindex];
 					$omax = $oindex + 1 - $maxlen;
 					$nmax = $nindex + 1 - $maxlen;
@@ -147,10 +166,11 @@ class rah_post_versions_diff {
 			}
 		}
 
-		if($maxlen == 0) {
+		if ($maxlen == 0)
+		{
 			return array(array('d' => $old, 'i' => $new));
 		}
-		
+
 		return 
 			array_merge(
 				$this->diff(
@@ -166,5 +186,3 @@ class rah_post_versions_diff {
 		;
 	}
 }
-
-?>
