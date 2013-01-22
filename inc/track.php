@@ -15,17 +15,28 @@
 
 new rah_post_versions_track();
 
-class rah_post_versions_track {
-	
+/**
+ * Tracks changes.
+ */
+
+class rah_post_versions_track
+{
+	/**
+	 * The form data.
+	 *
+	 * @var array
+	 */
+
 	private $form = array();
 
 	/**
-	 * Constructor
+	 * Constructor.
 	 */
 
-	public function __construct() {
-
-		if(!empty($_POST)) {
+	public function __construct()
+	{
+		if (!empty($_POST))
+		{
 			$this->form = psa(array_keys($_POST));
 			unset($this->form['_txp_token']);
 		}
@@ -39,71 +50,78 @@ class rah_post_versions_track {
 		register_callback(array($this, 'push_link'), 'link');
 		register_callback(array($this, 'push_multi_edit'), 'list');
 	}
-	
+
 	/**
-	 * Articles
+	 * Tracks articles.
+	 *
+	 * @param string $event
+	 * @param string $step
+	 * @param array  $r
 	 */
-	
-	public function push_article($e, $s, $r) {
+
+	public function push_article($e, $s, $r)
+	{
 		global $txp_user, $event, $step;
-	
+
 		rah_post_versions::get()->create_revision(
 			(string) $r['ID'], (string) $r['Title'], $txp_user, $event, $step, $this->form
 		);
 	}
-	
+
 	/**
-	 * Track posts
+	 * Track posts.
 	 */
-	
-	public function push_named() {
+
+	public function push_named()
+	{
 		global $txp_user, $event, $step;
-		
-		if(!$this->form || !ps('name')) {
+
+		if (!$this->form || !ps('name'))
+		{
 			return;
 		}
-		
+
 		rah_post_versions::get()->create_revision(
 			(string) ps('name'), (string) ps('name'), $txp_user, $event, $step, $this->form
 		);
 	}
-	
+
 	/**
-	 * Tracks link saving
+	 * Tracks links.
 	 */
-	
-	public function push_link() {
-	
+
+	public function push_link()
+	{
 		global $txp_user, $event, $step, $ID;
-		
-		if(!$this->form || !ps('id')) {
+
+		if (!$this->form || !ps('id'))
+		{
 			return;
 		}
-		
+
 		rah_post_versions::get()->create_revision(
 			(string) ps('id'), (string) ps('linkname'), $txp_user, $event, $step, $this->form
 		);
 	}
-	
+
 	/**
-	 * Multi-edit tracking
+	 * Multi-edit tracking.
 	 */
-	
-	public function push_multi_edit() {
-		
+
+	public function push_multi_edit()
+	{
 		global $txp_user, $event, $step, $ID;
-		
-		if(!$this->form || !ps('edit_method') || !ps('selected') || !is_array(ps('selected'))) {
+
+		if (!$this->form || !ps('edit_method') || !ps('selected') || !is_array(ps('selected')))
+		{
 			return;
 		}
-		
-		foreach(ps('selected') as $id) {
+
+		foreach (ps('selected') as $id)
+		{
 			rah_post_versions::get()->create_revision(
 				(string) $id, '', $txp_user, $event, ps('edit_method'), $this->form
 			);
 		}
-		
 	}
 }
-
-?>
